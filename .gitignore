@@ -1,2 +1,34 @@
 Docs/
+# Ambiente virtual
 venv/
+env/
+
+# Variáveis de ambiente
+.env
+
+# Banco de dados
+*.sqlite3
+db.sqlite3
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+
+# Django
+*.log
+media/
+staticfiles/
+
+# Testes
+.coverage
+htmlcov/
+.pytest_cache/
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
