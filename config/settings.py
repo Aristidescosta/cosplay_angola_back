@@ -38,7 +38,13 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+    # Third-party
     "rest_framework",
+    # Local apps
+    "apps.cosplayers",
+    "apps.cosplay_collections",
+    "apps.events",
+    "apps.media_files",
 ]
 
 MIDDLEWARE = [
