@@ -169,6 +169,7 @@ git commit -m "feat(cosplayers): adiciona model Cosplayer"
 - `chore`: Manutenção geral
 
 ## 🏗️ Estrutura do Projeto
+```
 cosplay-angola-backend/
 ├── apps/                    # Apps Django
 │   ├── cosplayers/         # Gerenciamento de cosplayers
@@ -187,6 +188,7 @@ cosplay-angola-backend/
 ├── pyproject.toml
 ├── requirements.txt
 └── README.md
+```
 
 ## 🤝 Como Contribuir
 
