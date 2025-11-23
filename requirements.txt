@@ -46,3 +46,4 @@ tomlkit==0.13.3
 virtualenv==20.35.4
 wcwidth==0.2.14
 wrapt==2.0.1
+django-autoslug==1.9.9
