@@ -49,13 +49,13 @@ class EventoAdmin(admin.ModelAdmin):
 
     search_fields = ["titulo", "slug", "descricao", "local"]
 
-    readonly_fields = ["id", "created_at", "updated_at"]
+    readonly_fields = ["id", "slug", "created_at", "updated_at"]
 
     # Organiza os campos em seções visuais no formulário
     fieldsets = (
         (
             "Informações Básicas",
-            {"fields": ("titulo", "slug", "descricao", "categoria")},
+            {"fields": ("titulo", "descricao", "categoria")},
         ),
         ("Data e Local", {"fields": ("data_inicio", "data_fim", "local")}),
         ("Classificação", {"fields": ("tipo_evento", "abrangencia", "status")}),
@@ -63,7 +63,7 @@ class EventoAdmin(admin.ModelAdmin):
         (
             "Metadados",
             {
-                "fields": ("id", "created_at", "updated_at"),
+                "fields": ("id", "slug", "created_at", "updated_at"),
                 "classes": ("collapse",),  # Começa colapsado
             },
         ),

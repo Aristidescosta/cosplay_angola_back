@@ -9,18 +9,21 @@ class CosplayerAdmin(admin.ModelAdmin):
 
     list_display = ["get_display_name", "nome", "instagram", "created_at"]
     search_fields = ["nome", "nome_artistico", "slug", "biografia"]
-    readonly_fields = ["id", "created_at", "updated_at"]
+    readonly_fields = ["id", "slug", "created_at", "updated_at"]
 
     fieldsets = (
         (
             "Identificação",
-            {"fields": ("nome", "nome_artistico", "slug", "foto_perfil")},
+            {"fields": ("nome", "nome_artistico", "foto_perfil")},
         ),
         ("Sobre", {"fields": ("biografia",)}),
         ("Redes Sociais", {"fields": ("instagram", "facebook", "tiktok")}),
         (
             "Metadados",
-            {"fields": ("id", "created_at", "updated_at"), "classes": ("collapse",)},
+            {
+                "fields": ("id", "slug", "created_at", "updated_at"),
+                "classes": ("collapse",),
+            },
         ),
     )
 
