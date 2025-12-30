@@ -25,6 +25,7 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     # Third-party
     "rest_framework",
+    "django_extensions",
     # Local apps
     "apps.cosplayers",
     "apps.cosplay_collections",

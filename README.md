@@ -34,7 +34,7 @@ Cosplay Angola é um acervo digital profissional que documenta e promove o movim
 - Python 3.11 ou superior
 - pip (gerenciador de pacotes Python)
 - Git
-- PostgreSQL (apenas para produção)
+- PostgreSQL 14+ (produção) ou SQLite (desenvolvimento)
 
 ## 🔧 Instalação e Configuração
 
@@ -73,7 +73,14 @@ Edite o arquivo `.env` e preencha as variáveis:
 SECRET_KEY=sua-chave-secreta-aqui
 DEBUG=True
 ALLOWED_HOSTS=localhost,127.0.0.1
-DATABASE_URL=sqlite:///db.sqlite3
+
+# Database Configuration (PostgreSQL)
+DB_ENGINE=django.db.backends.postgresql
+DB_NAME=cosplay_angola_db
+DB_USER=seu_usuario
+DB_PASSWORD=sua_senha
+DB_HOST=localhost
+DB_PORT=5432
 ```
 
 Para gerar uma SECRET_KEY segura:
@@ -85,13 +92,17 @@ python -c "from django.core.management.utils import get_random_secret_key; print
 ```bash
 python manage.py migrate
 ```
+### 6. (Opcional) Popule o banco com dados de teste
+```bash
+python manage.py shell < seed_data.py
+```
 
-### 6. (Opcional) Crie um superusuário
+### 7. (Opcional) Crie um superusuário
 ```bash
 python manage.py createsuperuser
 ```
 
-### 7. Rode o servidor de desenvolvimento
+### 8. Rode o servidor de desenvolvimento
 ```bash
 python manage.py runserver
 ```
@@ -99,6 +110,51 @@ python manage.py runserver
 Acesse:
 - API: http://127.0.0.1:8000/
 - Admin: http://127.0.0.1:8000/admin/
+
+---
+
+### 🛠️ Gerenciamento do Banco
+
+#### Criar novas migrations
+```bash
+# Após modificar algum model:
+python manage.py makemigrations
+
+# Aplicar migrations:
+python manage.py migrate
+```
+
+#### Verificar status das migrations
+```bash
+python manage.py showmigrations
+```
+
+#### Resetar banco de dados (CUIDADO!)
+```bash
+# Apenas em desenvolvimento!
+python manage.py flush
+python manage.py migrate
+python manage.py shell < seed_data.py
+```
+
+#### Gerar novo diagrama ERD
+```bash
+python manage.py graph_models cosplay_collections cosplayers events media_files \
+    --arrow-shape normal \
+    -o erd_cosplay_angola_detailed.png
+```
+
+#### Backup do banco (PostgreSQL)
+```bash
+pg_dump -U seu_usuario cosplay_angola_db > backup_$(date +%Y%m%d).sql
+```
+
+#### Restaurar backup (PostgreSQL)
+```bash
+psql -U seu_usuario cosplay_angola_db < backup_20250101.sql
+```
+
+---
 
 ## 🧪 Testes
 
@@ -206,5 +262,16 @@ cosplay-angola-backend/
 - [ ] Cobertura de testes adequada
 - [ ] Commits seguindo Conventional Commits
 - [ ] Documentação atualizada se necessário
+- [ ] Migrations criadas e testadas
+
+---
+
+## 📚 Documentação Adicional
+
+- [Guia de Configuração PostgreSQL](docs/postgres_setup.md)
+- [Guia de Autenticação JWT](docs/jwt_auth.md)
+- [Diagrama ERD](erd_cosplay_angola_detailed.png)
+
+---
 
 **Cosplay Angola** - Documentando e promovendo a cultura cosplay em Angola 🇦🇴
