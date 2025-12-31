@@ -1,3 +1,4 @@
+from datetime import timedelta
 from pathlib import Path
 
 import environ
@@ -26,11 +27,14 @@ INSTALLED_APPS = [
     # Third-party
     "rest_framework",
     "django_extensions",
+    "rest_framework_simplejwt",
+    "rest_framework_simplejwt.token_blacklist",
     # Local apps
     "apps.cosplayers",
     "apps.cosplay_collections",
     "apps.events",
     "apps.media_files",
+    "apps.accounts",
 ]
 
 MIDDLEWARE = [
@@ -122,3 +126,52 @@ STATIC_URL = "static/"
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+
+REST_FRAMEWORK = {
+    # Define que TODAS as rotas exigem autenticação por padrão
+    "DEFAULT_AUTHENTICATION_CLASSES": (
+        "rest_framework_simplejwt.authentication.JWTAuthentication",
+    ),
+    # Por padrão, todas as rotas exigem que o usuário esteja autenticado
+    "DEFAULT_PERMISSION_CLASSES": ("rest_framework.permissions.IsAuthenticated",),
+    # Formato de resposta (JSON apenas)
+    "DEFAULT_RENDERER_CLASSES": ("rest_framework.renderers.JSONRenderer",),
+    # Formato de entrada (JSON apenas)
+    "DEFAULT_PARSER_CLASSES": ("rest_framework.parsers.JSONParser",),
+}
+
+# ============================================
+# SIMPLE JWT CONFIGURATION
+# ============================================
+SIMPLE_JWT = {
+    # Tempo de vida do access token (15 minutos)
+    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=15),
+    # Tempo de vida do refresh token (7 dias)
+    "REFRESH_TOKEN_LIFETIME": timedelta(days=7),
+    # Gera um novo refresh token a cada refresh
+    # Aumenta segurança
+    "ROTATE_REFRESH_TOKENS": True,
+    # Adiciona o token antigo à blacklist após refresh
+    # Impede reutilização de tokens antigos
+    "BLACKLIST_AFTER_ROTATION": True,
+    # Atualiza o campo last_login do User automaticamente
+    "UPDATE_LAST_LOGIN": True,
+    # Algoritmo de criptografia
+    "ALGORITHM": "HS256",
+    # Chave para assinar os tokens (usa SECRET_KEY do Django)
+    "SIGNING_KEY": SECRET_KEY,
+    # Chave para verificar tokens (None = usa SIGNING_KEY)
+    "VERIFYING_KEY": None,
+    # Tipos de tokens aceitos no header Authorization
+    "AUTH_HEADER_TYPES": ("Bearer",),
+    # Nome do header HTTP
+    "AUTH_HEADER_NAME": "HTTP_AUTHORIZATION",
+    # Campo do User usado como identificador no token
+    "USER_ID_FIELD": "id",
+    # Nome do claim que armazena o ID no token
+    "USER_ID_CLAIM": "user_id",
+    # Classes de token permitidas
+    "AUTH_TOKEN_CLASSES": ("rest_framework_simplejwt.tokens.AccessToken",),
+    # Nome do claim que indica o tipo de token
+    "TOKEN_TYPE_CLAIM": "token_type",
+}
