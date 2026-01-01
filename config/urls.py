@@ -7,4 +7,6 @@ urlpatterns = [
     path("api/auth/", include("apps.accounts.urls")),
     # APIs dos apps serão adicionadas aqui depois
     # path('api/cosplayers/', include('apps.cosplayers.urls')),
+    # Eventos
+    path("api/", include("apps.events.urls")),
 ]

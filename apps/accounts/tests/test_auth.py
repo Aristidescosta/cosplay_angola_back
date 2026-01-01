@@ -2,7 +2,11 @@ import pytest
 from django.contrib.auth.models import User
 from django.urls import reverse
 from rest_framework import status
+from rest_framework.response import Response
 from rest_framework.test import APIClient
+from rest_framework.views import APIView
+
+from apps.accounts.permissions import IsSuperUser
 
 # ============================================
 # FIXTURES (Dados reutilizáveis nos testes)
@@ -515,6 +519,79 @@ class TestSuperuserPermissions:
         access_token = login_response.data["access"]
 
         # Acessar /user/
+        user_url = reverse("user_detail")
+        api_client.credentials(HTTP_AUTHORIZATION=f"Bearer {access_token}")
+        response = api_client.get(user_url)
+
+        assert response.status_code == status.HTTP_200_OK
+        assert response.data["is_superuser"] is False
+
+
+# ============================================
+# TESTES DE PERMISSÕES CUSTOMIZADAS
+# ============================================
+
+
+# View de teste (só para usar nos testes)
+class TestSuperUserView(APIView):
+    """View de teste que usa IsSuperUser."""
+
+    permission_classes = [IsSuperUser]
+
+    def get(self, request):
+        return Response({"message": "Você é super admin!"})
+
+
+# Adicione esta URL temporária (ou use uma view real sua)
+# Em apps/accounts/urls.py, adicione:
+# path('test-superuser/', TestSuperUserView.as_view(), name='test_superuser'),
+
+
+@pytest.mark.django_db
+class TestCustomPermissions:
+    """Testes para permissões customizadas."""
+
+    def test_is_superuser_allows_superuser(
+        self, api_client, superuser_data, create_superuser
+    ):
+        """
+        Teste: IsSuperUser permite acesso para superusuários.
+        """
+        # Login como super admin
+        login_url = reverse("token_obtain_pair")
+        login_data = {
+            "username": superuser_data["username"],
+            "password": superuser_data["password"],
+        }
+        login_response = api_client.post(login_url, login_data, format="json")
+        access_token = login_response.data["access"]
+
+        # Tentar acessar rota protegida (quando implementar, use uma rota real)
+        # Por enquanto, apenas verificamos se o token funciona
+        user_url = reverse("user_detail")
+        api_client.credentials(HTTP_AUTHORIZATION=f"Bearer {access_token}")
+        response = api_client.get(user_url)
+
+        assert response.status_code == status.HTTP_200_OK
+        assert response.data["is_superuser"] is True
+
+    def test_is_superuser_blocks_regular_user(self, api_client, user_data, create_user):
+        """
+        Teste: IsSuperUser bloqueia usuários comuns.
+
+        Nota: Este teste será mais útil quando tivermos rotas
+        reais protegidas com IsSuperUser.
+        """
+        # Login como usuário comum
+        login_url = reverse("token_obtain_pair")
+        login_data = {
+            "username": user_data["username"],
+            "password": user_data["password"],
+        }
+        login_response = api_client.post(login_url, login_data, format="json")
+        access_token = login_response.data["access"]
+
+        # Verificar que não é superuser
         user_url = reverse("user_detail")
         api_client.credentials(HTTP_AUTHORIZATION=f"Bearer {access_token}")
         response = api_client.get(user_url)
