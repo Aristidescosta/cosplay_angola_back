@@ -1,6 +1,7 @@
 from datetime import timedelta
 from pathlib import Path
 
+import dj_database_url
 import environ
 
 # Diretório base
@@ -14,7 +15,7 @@ environ.Env.read_env(BASE_DIR / ".env")
 
 SECRET_KEY = env("SECRET_KEY")
 DEBUG = env("DEBUG")
-ALLOWED_HOSTS = env.list("ALLOWED_HOSTS")
+ALLOWED_HOSTS = env.list("ALLOWED_HOSTS", default=["localhost", "127.0.0.1"])
 
 
 INSTALLED_APPS = [
@@ -25,6 +26,7 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     # Third-party
+    "corsheaders",
     "rest_framework",
     "django_extensions",
     "rest_framework_simplejwt",
@@ -39,7 +41,9 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
+    "corsheaders.middleware.CorsMiddleware",
     "django.middleware.security.SecurityMiddleware",
+    "whitenoise.middleware.WhiteNoiseMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
@@ -181,3 +185,63 @@ SIMPLE_JWT = {
     # Nome do claim que indica o tipo de token
     "TOKEN_TYPE_CLAIM": "token_type",
 }
+
+
+# ============================================
+# CONFIGURAÇÕES DE PRODUÇÃO
+# ============================================
+
+if env.bool("RENDER", default=False):
+    # Segurança
+    DEBUG = False
+    SECURE_SSL_REDIRECT = True
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
+    SECURE_BROWSER_XSS_FILTER = True
+    SECURE_CONTENT_TYPE_NOSNIFF = True
+    X_FRAME_OPTIONS = "DENY"
+
+    # Configuração do banco (Render fornece DATABASE_URL)
+    DATABASES["default"] = dj_database_url.config(
+        default=env("DATABASE_URL"),
+        conn_max_age=600,
+        conn_health_checks=True,
+    )
+
+    # Middleware para arquivos estáticos
+    MIDDLEWARE.insert(1, "whitenoise.middleware.WhiteNoiseMiddleware")
+
+    # Configuração de arquivos estáticos
+    STATIC_ROOT = BASE_DIR / "staticfiles"
+    STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
+
+# ============================================
+# CORS (IMPORTANTE PARA FRONTEND)
+# ============================================
+
+# Em desenvolvimento: permite tudo
+if DEBUG:
+    CORS_ALLOW_ALL_ORIGINS = True
+else:
+    # Em produção: apenas domínios específicos
+    CORS_ALLOWED_ORIGINS = env.list(
+        "CORS_ALLOWED_ORIGINS",
+        default=[
+            "https://cosplayangola.com",
+            "https://www.cosplayangola.com",
+            # Adicione o domínio do seu frontend aqui
+        ],
+    )
+
+CORS_ALLOW_CREDENTIALS = True
+CORS_ALLOW_HEADERS = [
+    "accept",
+    "accept-encoding",
+    "authorization",
+    "content-type",
+    "dnt",
+    "origin",
+    "user-agent",
+    "x-csrftoken",
+    "x-requested-with",
+]
