@@ -1,23 +1,39 @@
+import os
 from datetime import timedelta
 from pathlib import Path
 
 import dj_database_url
 import environ
 
-# Diretório base
+# =====================
+# DIRETÓRIO BASE
+# =====================
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-# Inicializando o django-environ
+# =====================
+# DJANGO-ENVIRON
+# =====================
 env = environ.Env(DEBUG=(bool, False))
 
-# Lendo o arquivo .env
-environ.Env.read_env(BASE_DIR / ".env")
+# Ler .env (só existe em desenvolvimento local)
+env_file = BASE_DIR / ".env"
+if env_file.exists():
+    environ.Env.read_env(env_file)
 
+# =====================
+# CONFIGURAÇÕES BÁSICAS
+# =====================
 SECRET_KEY = env("SECRET_KEY")
-DEBUG = env("DEBUG")
+DEBUG = env.bool("DEBUG", default=False)
 ALLOWED_HOSTS = env.list("ALLOWED_HOSTS", default=["localhost", "127.0.0.1"])
 
+# Se estiver no Render, adicionar domínio do Render
+if env.bool("RENDER", default=False):
+    ALLOWED_HOSTS.append(".onrender.com")
 
+# =====================
+# INSTALLED APPS
+# =====================
 INSTALLED_APPS = [
     "django.contrib.admin",
     "django.contrib.auth",
@@ -40,10 +56,13 @@ INSTALLED_APPS = [
     "apps.accounts",
 ]
 
+# =====================
+# MIDDLEWARE
+# =====================
 MIDDLEWARE = [
     "corsheaders.middleware.CorsMiddleware",
     "django.middleware.security.SecurityMiddleware",
-    "whitenoise.middleware.WhiteNoiseMiddleware",
+    "whitenoise.middleware.WhiteNoiseMiddleware",  # ← Whitenoise SEMPRE (produção e dev)
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
@@ -71,77 +90,84 @@ TEMPLATES = [
 
 WSGI_APPLICATION = "config.wsgi.application"
 
+# =====================
+# DATABASES
+# =====================
+# SOLUÇÃO ROBUSTA: Funciona em DEV e PRODUÇÃO
+DATABASE_URL = os.environ.get("DATABASE_URL")
 
-# Database
-# https://docs.djangoproject.com/en/5.2/ref/settings/#databases
-
-DATABASES = {
-    "default": {
-        "ENGINE": env("DB_ENGINE"),
-        "NAME": env("DB_NAME"),
-        "USER": env("DB_USER"),
-        "PASSWORD": env("DB_PASSWORD"),
-        "HOST": env("DB_HOST"),
-        "PORT": env("DB_PORT"),
-        "CONN_MAX_AGE": 600,
-        "OPTIONS": {
-            "connect_timeout": 10,
-        },
+if DATABASE_URL:
+    # PRODUÇÃO: Render fornece DATABASE_URL completa
+    DATABASES = {
+        "default": dj_database_url.parse(
+            DATABASE_URL,
+            conn_max_age=600,
+            conn_health_checks=True,
+        )
     }
-}
+else:
+    # DESENVOLVIMENTO: Lê variáveis individuais do .env
+    DATABASES = {
+        "default": {
+            "ENGINE": env("DB_ENGINE", default="django.db.backends.postgresql"),
+            "NAME": env("DB_NAME", default="cosplay_angola_db"),
+            "USER": env("DB_USER", default="cosplay_user"),
+            "PASSWORD": env("DB_PASSWORD", default=""),
+            "HOST": env("DB_HOST", default="localhost"),
+            "PORT": env("DB_PORT", default="5432"),
+            "CONN_MAX_AGE": 600,
+            "OPTIONS": {"connect_timeout": 10},
+        }
+    }
 
-
-# Password validation
-# https://docs.djangoproject.com/en/5.2/ref/settings/#auth-password-validators
-
+# =====================
+# PASSWORD VALIDATION
+# =====================
 AUTH_PASSWORD_VALIDATORS = [
     {
-        "NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator",
+        "NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator"
     },
-    {
-        "NAME": "django.contrib.auth.password_validation.MinimumLengthValidator",
-    },
-    {
-        "NAME": "django.contrib.auth.password_validation.CommonPasswordValidator",
-    },
-    {
-        "NAME": "django.contrib.auth.password_validation.NumericPasswordValidator",
-    },
+    {"NAME": "django.contrib.auth.password_validation.MinimumLengthValidator"},
+    {"NAME": "django.contrib.auth.password_validation.CommonPasswordValidator"},
+    {"NAME": "django.contrib.auth.password_validation.NumericPasswordValidator"},
 ]
 
-
-# Internationalization
-# https://docs.djangoproject.com/en/5.2/topics/i18n/
-
+# =====================
+# INTERNATIONALIZATION
+# =====================
 LANGUAGE_CODE = "en-us"
-
 TIME_ZONE = "UTC"
-
 USE_I18N = True
-
 USE_TZ = True
 
-
-# Static files (CSS, JavaScript, Images)
-# https://docs.djangoproject.com/en/5.2/howto/static-files/
-
+# =====================
+# STATIC FILES (SEMPRE DEFINIDO)
+# =====================
 STATIC_URL = "static/"
+STATIC_ROOT = BASE_DIR / "staticfiles"  # ← SEMPRE definido (não dentro de if)
 
-# Default primary key field type
-# https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
+# NÃO usar STATICFILES_DIRS se a pasta não existe
+# (comente ou delete esta linha se você não tem uma pasta 'static/')
+# STATICFILES_DIRS = [BASE_DIR / "static"]
 
+# Configuração de storage para Whitenoise (produção)
+if env.bool("RENDER", default=False):
+    STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
+
+# =====================
+# DEFAULT PRIMARY KEY
+# =====================
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
+# =====================
+# REST FRAMEWORK
+# =====================
 REST_FRAMEWORK = {
-    # Define que TODAS as rotas exigem autenticação por padrão
     "DEFAULT_AUTHENTICATION_CLASSES": (
         "rest_framework_simplejwt.authentication.JWTAuthentication",
     ),
-    # Por padrão, todas as rotas exigem que o usuário esteja autenticado
     "DEFAULT_PERMISSION_CLASSES": ("rest_framework.permissions.IsAuthenticated",),
-    # Formato de resposta (JSON apenas)
     "DEFAULT_RENDERER_CLASSES": ("rest_framework.renderers.JSONRenderer",),
-    # Formato de entrada (JSON apenas)
     "DEFAULT_PARSER_CLASSES": ("rest_framework.parsers.JSONParser",),
     "DEFAULT_FILTER_BACKENDS": (
         "django_filters.rest_framework.DjangoFilterBackend",
@@ -150,50 +176,31 @@ REST_FRAMEWORK = {
     ),
 }
 
-# ============================================
-# SIMPLE JWT CONFIGURATION
-# ============================================
+# =====================
+# SIMPLE JWT
+# =====================
 SIMPLE_JWT = {
-    # Tempo de vida do access token (15 minutos)
     "ACCESS_TOKEN_LIFETIME": timedelta(minutes=15),
-    # Tempo de vida do refresh token (7 dias)
     "REFRESH_TOKEN_LIFETIME": timedelta(days=7),
-    # Gera um novo refresh token a cada refresh
-    # Aumenta segurança
     "ROTATE_REFRESH_TOKENS": True,
-    # Adiciona o token antigo à blacklist após refresh
-    # Impede reutilização de tokens antigos
     "BLACKLIST_AFTER_ROTATION": True,
-    # Atualiza o campo last_login do User automaticamente
     "UPDATE_LAST_LOGIN": True,
-    # Algoritmo de criptografia
     "ALGORITHM": "HS256",
-    # Chave para assinar os tokens (usa SECRET_KEY do Django)
     "SIGNING_KEY": SECRET_KEY,
-    # Chave para verificar tokens (None = usa SIGNING_KEY)
     "VERIFYING_KEY": None,
-    # Tipos de tokens aceitos no header Authorization
     "AUTH_HEADER_TYPES": ("Bearer",),
-    # Nome do header HTTP
     "AUTH_HEADER_NAME": "HTTP_AUTHORIZATION",
-    # Campo do User usado como identificador no token
     "USER_ID_FIELD": "id",
-    # Nome do claim que armazena o ID no token
     "USER_ID_CLAIM": "user_id",
-    # Classes de token permitidas
     "AUTH_TOKEN_CLASSES": ("rest_framework_simplejwt.tokens.AccessToken",),
-    # Nome do claim que indica o tipo de token
     "TOKEN_TYPE_CLAIM": "token_type",
 }
 
-
-# ============================================
-# CONFIGURAÇÕES DE PRODUÇÃO
-# ============================================
-
+# =====================
+# SEGURANÇA (PRODUÇÃO)
+# =====================
 if env.bool("RENDER", default=False):
-    # Segurança
-    DEBUG = False
+    # Segurança SSL
     SECURE_SSL_REDIRECT = True
     SESSION_COOKIE_SECURE = True
     CSRF_COOKIE_SECURE = True
@@ -201,35 +208,19 @@ if env.bool("RENDER", default=False):
     SECURE_CONTENT_TYPE_NOSNIFF = True
     X_FRAME_OPTIONS = "DENY"
 
-    # Configuração do banco (Render fornece DATABASE_URL)
-    DATABASES["default"] = dj_database_url.config(
-        default=env("DATABASE_URL"),
-        conn_max_age=600,
-        conn_health_checks=True,
-    )
-
-    # Middleware para arquivos estáticos
-    MIDDLEWARE.insert(1, "whitenoise.middleware.WhiteNoiseMiddleware")
-
-    # Configuração de arquivos estáticos
-    STATIC_ROOT = BASE_DIR / "staticfiles"
-    STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
-
-# ============================================
-# CORS (IMPORTANTE PARA FRONTEND)
-# ============================================
-
-# Em desenvolvimento: permite tudo
+# =====================
+# CORS
+# =====================
 if DEBUG:
+    # Desenvolvimento: permite tudo
     CORS_ALLOW_ALL_ORIGINS = True
 else:
-    # Em produção: apenas domínios específicos
+    # Produção: apenas domínios específicos
     CORS_ALLOWED_ORIGINS = env.list(
         "CORS_ALLOWED_ORIGINS",
         default=[
             "https://cosplayangola.com",
             "https://www.cosplayangola.com",
-            # Adicione o domínio do seu frontend aqui
         ],
     )
 
