@@ -2,6 +2,9 @@ import os
 from datetime import timedelta
 from pathlib import Path
 
+import cloudinary
+import cloudinary.api
+import cloudinary.uploader
 import dj_database_url
 import environ
 
@@ -236,3 +239,24 @@ CORS_ALLOW_HEADERS = [
     "x-csrftoken",
     "x-requested-with",
 ]
+# =====================
+# CLOUDINARY CONFIGURATION
+# =====================
+
+cloudinary.config(
+    cloud_name=env("CLOUDINARY_CLOUD_NAME", default=""),
+    api_key=env("CLOUDINARY_API_KEY", default=""),
+    api_secret=env("CLOUDINARY_API_SECRET", default=""),
+    secure=True,  # Sempre usar HTTPS
+)
+
+# Configurações de upload
+CLOUDINARY_UPLOAD_PRESET = {
+    "folder": "cosplay_angola",  # Pasta no Cloudinary
+    "allowed_formats": ["jpg", "jpeg", "png", "webp", "gif"],
+    "max_file_size": 5 * 1024 * 1024,  # 5MB
+    "transformation": [
+        {"quality": "auto:best"},  # Otimização automática
+        {"fetch_format": "auto"},  # Formato automático (WebP se suportado)
+    ],
+}

@@ -1,6 +1,11 @@
 from django.utils import timezone
 from rest_framework import serializers
 
+from apps.media_files.utils import (
+    delete_image_from_cloudinary,
+    upload_image_to_cloudinary,
+)
+
 from .models import Categoria, Evento, Parceiro
 
 # ============================================
@@ -204,12 +209,7 @@ class EventoDetailSerializer(serializers.ModelSerializer):
 class EventoCreateUpdateSerializer(serializers.ModelSerializer):
     """
     Serializer para criar e atualizar eventos.
-
-    Características:
-    - Validações customizadas
-    - Campos obrigatórios explícitos
-    - Mensagens de erro claras
-    - Ideal para POST /api/events/ e PUT/PATCH /api/events/1/
+    AGORA COM SUPORTE A UPLOAD DE IMAGEM!
     """
 
     # Campo categoria aceita apenas o ID
@@ -234,6 +234,13 @@ class EventoCreateUpdateSerializer(serializers.ModelSerializer):
         },
     )
 
+    # NOVO: Campo para upload de imagem
+    imagem = serializers.ImageField(
+        required=False,
+        write_only=True,  # Não retorna na resposta
+        help_text="Arquivo de imagem para o evento (JPG, PNG, WebP, GIF)",
+    )
+
     class Meta:
         model = Evento
         fields = [
@@ -246,46 +253,29 @@ class EventoCreateUpdateSerializer(serializers.ModelSerializer):
             "tipo_evento",
             "abrangencia",
             "status",
-            "imagem_destaque",
+            "imagem_destaque",  # URL (pode vir preenchida ou vazia)
+            "imagem",  # Arquivo (novo)
             "parceiros_ids",
         ]
 
     def validate_data_inicio(self, value):
-        """
-        Valida data de início.
-
-        Regras:
-        - Não pode ser no passado (para eventos novos)
-        - Pode ser no passado (para editar eventos antigos)
-        """
-        # Se está criando (não tem instance), não permite data no passado
+        """Valida data de início."""
         if not self.instance and value < timezone.now():
             raise serializers.ValidationError("Data de início não pode ser no passado.")
         return value
 
     def validate(self, attrs):
-        """
-        Validações que envolvem múltiplos campos.
-
-        Args:
-            attrs: Dicionário com todos os dados validados
-
-        Returns:
-            dict: Dados validados
-
-        Raises:
-            ValidationError: Se alguma regra for violada
-        """
+        """Validações que envolvem múltiplos campos."""
         data_inicio = attrs.get("data_inicio")
         data_fim = attrs.get("data_fim")
 
-        # Se tem data_fim, valida que é depois de data_inicio
+        # Validar data_fim
         if data_fim and data_inicio and data_fim < data_inicio:
             raise serializers.ValidationError(
                 {"data_fim": "Data de término deve ser posterior à data de início."}
             )
 
-        # Se data_fim é muito distante (mais de 1 ano), avisa
+        # Validar duração
         if data_fim and data_inicio:
             delta = data_fim - data_inicio
             if delta.days > 365:
@@ -295,17 +285,77 @@ class EventoCreateUpdateSerializer(serializers.ModelSerializer):
 
         return attrs
 
+    def create(self, validated_data):
+        """
+        Cria evento com upload de imagem (se fornecida).
+        """
+        # Extrair imagem (se houver)
+        imagem_file = validated_data.pop("imagem", None)
+
+        # Criar evento
+        evento = super().create(validated_data)
+
+        # Se tem imagem, fazer upload
+        if imagem_file:
+            try:
+                cloudinary_result = upload_image_to_cloudinary(
+                    imagem_file, folder=f"cosplay_angola/eventos/{evento.slug}"
+                )
+
+                # Atualizar URL da imagem
+                evento.imagem_destaque = cloudinary_result["secure_url"]
+                evento.save(update_fields=["imagem_destaque"])
+
+            except Exception as e:
+                # Se falhar upload, deletar evento criado
+                evento.delete()
+                raise serializers.ValidationError(
+                    {"imagem": f"Erro ao fazer upload da imagem: {str(e)}"}
+                )
+
+        return evento
+
+    def update(self, instance, validated_data):
+        """
+        Atualiza evento com upload de nova imagem (se fornecida).
+        """
+        # Extrair nova imagem (se houver)
+        imagem_file = validated_data.pop("imagem", None)
+
+        # Guardar URL antiga (para deletar depois)
+        old_image_url = instance.imagem_destaque
+
+        # Atualizar evento
+        evento = super().update(instance, validated_data)
+
+        # Se tem nova imagem, fazer upload
+        if imagem_file:
+            try:
+                cloudinary_result = upload_image_to_cloudinary(
+                    imagem_file, folder=f"cosplay_angola/eventos/{evento.slug}"
+                )
+
+                # Atualizar URL da imagem
+                evento.imagem_destaque = cloudinary_result["secure_url"]
+                evento.save(update_fields=["imagem_destaque"])
+
+                # Deletar imagem antiga do Cloudinary (se existir)
+                if old_image_url and "cloudinary.com" in old_image_url:
+                    try:
+                        parts = old_image_url.split("/upload/")
+                        if len(parts) > 1:
+                            public_id = parts[1].rsplit(".", 1)[0]
+                            delete_image_from_cloudinary(public_id)
+                    except:  # noqa: E722
+                        pass  # Não falhar se deletar imagem antiga falhar
+
+            except Exception as e:
+                raise serializers.ValidationError(
+                    {"imagem": f"Erro ao fazer upload da imagem: {str(e)}"}
+                )
+
+        return evento
+
     def to_representation(self, instance):
-        """
-        Customiza a resposta após criar/atualizar.
-
-        Por que fazer isso?
-        - Ao criar/atualizar, queremos retornar os detalhes completos
-        - Não apenas os IDs, mas os objetos completos
-        - Usa EventoDetailSerializer para isso
-
-        Returns:
-            dict: Representação completa do evento
-        """
-        # Usa o serializer de detalhes para a resposta
+        """Retorna detalhes completos do evento."""
         return EventoDetailSerializer(instance, context=self.context).data

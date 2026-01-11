@@ -2,6 +2,7 @@ from django.utils import timezone
 from django_filters import rest_framework as filters
 from rest_framework import viewsets
 from rest_framework.decorators import action
+from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
 from rest_framework.response import Response
 
 from apps.accounts.permissions import IsSuperUserOrReadOnly
@@ -134,6 +135,8 @@ class EventoViewSet(viewsets.ModelViewSet):
     search_fields = ["titulo", "descricao", "local"]  # Para busca padrão do DRF
     ordering_fields = ["data_inicio", "created_at", "titulo"]
     ordering = ["-data_inicio"]  # Ordenação padrão: mais recentes primeiro
+
+    parser_classes = (MultiPartParser, FormParser, JSONParser)
 
     def get_serializer_class(self):
         """

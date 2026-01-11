@@ -9,4 +9,6 @@ urlpatterns = [
     # path('api/cosplayers/', include('apps.cosplayers.urls')),
     # Eventos
     path("api/", include("apps.events.urls")),
+    # Mídias
+    path("api/", include("apps.media_files.urls")),
 ]
