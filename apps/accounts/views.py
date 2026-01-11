@@ -1,11 +1,86 @@
 from django.contrib.auth.models import User
 from rest_framework import generics, status
+from rest_framework.decorators import api_view
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
+from rest_framework.reverse import reverse
 from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
 
 from .serializers import RegisterSerializer, UserSerializer
+
+
+@api_view(["GET"])
+def api_root(request, format=None):
+    """
+    API Root - Lista todos os endpoints disponíveis.
+
+    Esta view retorna uma página inicial amigável com todos os endpoints
+    da API, substituindo o erro 404 padrão.
+    """
+    return Response(
+        {
+            "message": "Bem-vindo à API do Cosplay Angola! 🎭",
+            "version": "1.0.0",
+            "documentation": ("https://github.com/seu-usuario/cosplay-angola-backend"),
+            "endpoints": {
+                "authentication": {
+                    "register": reverse("register", request=request, format=format),
+                    "login": reverse(
+                        "token_obtain_pair", request=request, format=format
+                    ),
+                    "token_refresh": reverse(
+                        "token_refresh", request=request, format=format
+                    ),
+                    "token_verify": reverse(
+                        "token_verify", request=request, format=format
+                    ),
+                    "user_profile": reverse(
+                        "user_detail", request=request, format=format
+                    ),
+                    "logout": reverse("logout", request=request, format=format),
+                },
+                "events": {
+                    "list_all": reverse("evento-list", request=request, format=format),
+                    "upcoming": request.build_absolute_uri("/api/events/proximos/"),
+                    "past": request.build_absolute_uri("/api/events/passados/"),
+                    "highlights": request.build_absolute_uri("/api/events/destaques/"),
+                },
+                "media": {
+                    "list_all": reverse("midia-list", request=request, format=format),
+                    "upload": request.build_absolute_uri("/api/media/upload/"),
+                },
+            },
+            "usage": {
+                "authentication": (
+                    "Inclua o token JWT no header: " "Authorization: Bearer <token>"
+                ),
+                "pagination": ("Use ?page=N e ?page_size=N para controlar paginação"),
+                "filtering": (
+                    "Eventos suportam filtros por categoria, " "tipo, status, data"
+                ),
+                "search": (
+                    "Use ?search=termo para buscar em título, " "descrição e local"
+                ),
+            },
+            "examples": {
+                "register": (
+                    "POST /api/auth/register/ com username, "
+                    "email, password, password2"
+                ),
+                "login": "POST /api/auth/token/ com username e password",
+                "list_events": "GET /api/events/",
+                "filter_events": (
+                    "GET /api/events/?tipo_evento=concurso" "&status=publicado"
+                ),
+                "search_events": "GET /api/events/?search=luanda",
+                "upcoming_events": "GET /api/events/proximos/?limit=5",
+                "upload_image": (
+                    "POST /api/media/upload/ " '(multipart/form-data com campo "image")'
+                ),
+            },
+        }
+    )
 
 
 class RegisterView(generics.CreateAPIView):

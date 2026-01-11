@@ -1,7 +1,10 @@
 from django.contrib import admin
 from django.urls import include, path  # noqa: F401
 
+from apps.accounts.views import api_root
+
 urlpatterns = [
+    path("", api_root, name="api-root"),
     path("admin/", admin.site.urls),
     # Endpoints de autenticação
     path("api/auth/", include("apps.accounts.urls")),
