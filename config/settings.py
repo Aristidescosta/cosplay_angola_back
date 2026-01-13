@@ -224,9 +224,10 @@ else:
         default=[
             "https://cosplayangola.com",
             "https://www.cosplayangola.com",
+            "http://localhost:3000",
+            "https://cosplay-angola-front.vercel.app/",
         ],
     )
-
 CORS_ALLOW_CREDENTIALS = True
 CORS_ALLOW_HEADERS = [
     "accept",
