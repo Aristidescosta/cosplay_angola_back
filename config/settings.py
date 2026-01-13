@@ -214,21 +214,9 @@ if env.bool("RENDER", default=False):
 # =====================
 # CORS
 # =====================
-if DEBUG:
-    # Desenvolvimento: permite tudo
-    CORS_ALLOW_ALL_ORIGINS = True
-else:
-    # Produção: apenas domínios específicos
-    CORS_ALLOWED_ORIGINS = env.list(
-        "CORS_ALLOWED_ORIGINS",
-        default=[
-            "https://cosplayangola.com",
-            "https://www.cosplayangola.com",
-            "http://localhost:3000",
-            "https://cosplay-angola-front.vercel.app/",
-        ],
-    )
+CORS_ALLOW_ALL_ORIGINS = True
 CORS_ALLOW_CREDENTIALS = True
+
 CORS_ALLOW_HEADERS = [
     "accept",
     "accept-encoding",
@@ -240,6 +228,16 @@ CORS_ALLOW_HEADERS = [
     "x-csrftoken",
     "x-requested-with",
 ]
+
+CORS_ALLOW_METHODS = [
+    "DELETE",
+    "GET",
+    "OPTIONS",
+    "PATCH",
+    "POST",
+    "PUT",
+]
+
 # =====================
 # CLOUDINARY CONFIGURATION
 # =====================
