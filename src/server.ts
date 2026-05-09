@@ -23,9 +23,9 @@ const app = Fastify({
 
 // Registar plugins
 async function registerPlugins() {
-  // CORS - permite frontend comunicar com backend
+  // CORS
   await app.register(cors, {
-    origin: true, // em produção, muda para o domínio específico
+    origin: true,
   });
 
   // Multipart - para upload de ficheiros
@@ -36,7 +36,6 @@ async function registerPlugins() {
   });
 }
 
-// Registar rotas
 async function registerRoutes() {
   // Health check route (para testar se o servidor está a funcionar)
   app.get('/health', async () => {
