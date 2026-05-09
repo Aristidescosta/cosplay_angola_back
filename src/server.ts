@@ -2,10 +2,7 @@ import Fastify from 'fastify';
 import cors from '@fastify/cors';
 import multipart from '@fastify/multipart';
 import { config } from './config/env';
-
-// Importar rotas (vamos criar depois)
-// import authRoutes from './routes/auth.routes';
-// import eventRoutes from './routes/event.routes';
+import { authRoutes } from './routes/auth.routes';
 
 const app = Fastify({
   logger: {
@@ -50,8 +47,10 @@ async function registerRoutes() {
     };
   });
 
-  // Vamos registar as outras rotas aqui
-  // await app.register(authRoutes, { prefix: '/api/auth' });
+  // Auth routes
+  await app.register(authRoutes, { prefix: '/api/auth' });
+  
+  // Outras rotas virão aqui
   // await app.register(eventRoutes, { prefix: '/api/events' });
 }
 
