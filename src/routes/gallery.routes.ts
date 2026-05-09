@@ -1,8 +1,10 @@
 import { FastifyInstance } from 'fastify';
 import { GalleryController } from '../controllers/gallery.controller';
+import { PhotoController } from '../controllers/photo.controller';
 import { authMiddleware, requireRole } from '../middlewares/auth.middleware';
 
 const galleryController = new GalleryController();
+const photoController = new PhotoController();
 
 export async function galleryRoutes(app: FastifyInstance) {
   /**
@@ -51,5 +53,14 @@ export async function galleryRoutes(app: FastifyInstance) {
   app.delete('/:id', {
     preHandler: authMiddleware,
     handler: galleryController.delete,
+  });
+
+  /**
+   * POST /api/galleries/:galleryId/photos/reorder
+   * Reordenar fotos de uma galeria (dono ou ADMIN)
+   */
+  app.post('/:galleryId/photos/reorder', {
+    preHandler: authMiddleware,
+    handler: photoController.reorder,
   });
 }

@@ -5,6 +5,7 @@ import { config } from "./config/env";
 import { authRoutes } from "./routes/auth.routes";
 import { eventRoutes } from "./routes/event.routes";
 import { galleryRoutes } from "./routes/gallery.routes";
+import { photoRoutes } from "./routes/photo.routes";
 
 const app = Fastify({
   logger: {
@@ -52,6 +53,7 @@ async function registerRoutes() {
   await app.register(authRoutes, { prefix: "/api/auth" });
   await app.register(eventRoutes, { prefix: "/api/events" });
   await app.register(galleryRoutes, { prefix: "/api/galleries" });
+  await app.register(photoRoutes, { prefix: '/api/photos' });
   // Outras rotas virão aqui
   // await app.register(eventRoutes, { prefix: '/api/events' });
 }

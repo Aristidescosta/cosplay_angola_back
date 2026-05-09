@@ -32,8 +32,12 @@ Thumbs.db
 
 # Uploads (ficheiros temporários)
 uploads/
+uploads-test/
 temp/
 
 # Prisma
 prisma/migrations/
 /src/generated/prisma
+
+# Tests
+coverage/
