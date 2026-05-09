@@ -3,6 +3,7 @@ import cors from '@fastify/cors';
 import multipart from '@fastify/multipart';
 import { config } from './config/env';
 import { authRoutes } from './routes/auth.routes';
+import { eventRoutes } from './routes/event.routes';
 
 const app = Fastify({
   logger: {
@@ -48,7 +49,7 @@ async function registerRoutes() {
 
   // Auth routes
   await app.register(authRoutes, { prefix: '/api/auth' });
-  
+  await app.register(eventRoutes, { prefix: '/api/events' });
   // Outras rotas virão aqui
   // await app.register(eventRoutes, { prefix: '/api/events' });
 }

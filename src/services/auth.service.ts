@@ -96,7 +96,7 @@ export class AuthService {
           select: {
             id: true,
             bio: true,
-            website: true,
+            portfolioUrl: true,
             instagram: true,
           },
         },
