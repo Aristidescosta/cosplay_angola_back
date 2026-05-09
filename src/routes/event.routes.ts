@@ -1,8 +1,10 @@
 import { FastifyInstance } from 'fastify';
 import { EventController } from '../controllers/event.controller';
+import { GalleryController } from '../controllers/gallery.controller';
 import { authMiddleware, requireRole } from '../middlewares/auth.middleware';
 
 const eventController = new EventController();
+const galleryController = new GalleryController();
 
 export async function eventRoutes(app: FastifyInstance) {
   /**
@@ -22,6 +24,12 @@ export async function eventRoutes(app: FastifyInstance) {
    * Ver evento por slug (público)
    */
   app.get('/slug/:slug', eventController.getBySlug);
+
+  /**
+   * GET /api/events/:eventId/galleries
+   * Listar galerias de um evento (público)
+   */
+  app.get('/:eventId/galleries', galleryController.getByEventId);
 
   /**
    * POST /api/events

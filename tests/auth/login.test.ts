@@ -17,9 +17,6 @@ describe('POST /api/auth/login', () => {
       password: '123456',
     });
 
-    console.log("USER CREATED: ", user)
-
-    // Tentar login
     const response = await app.inject({
       method: 'POST',
       url: '/api/auth/login',
@@ -28,8 +25,6 @@ describe('POST /api/auth/login', () => {
         password: '123456',
       },
     });
-
-    console.log("RESPONSE: ", response)
 
     expect(response.statusCode).toBe(200);
 

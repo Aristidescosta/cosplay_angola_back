@@ -16,7 +16,6 @@ export class EventController {
   async create(request: FastifyRequest, reply: FastifyReply) {
     try {
       const data = createEventSchema.parse(request.body);
-      console.log("DATA PARSED: ", data)
       const event = await eventService.create(data);
 
       return reply.status(201).send({
