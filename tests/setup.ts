@@ -24,6 +24,9 @@ beforeAll(async () => {
 beforeEach(async () => {
   await prisma.photographer.deleteMany();
   await prisma.user.deleteMany();
+  await prisma.photo.deleteMany();
+  await prisma.gallery.deleteMany();
+  await prisma.event.deleteMany();
 });
 
 // Executar depois de TODOS os testes

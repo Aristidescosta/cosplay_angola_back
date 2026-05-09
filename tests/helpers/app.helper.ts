@@ -2,6 +2,7 @@ import Fastify, { FastifyInstance } from "fastify";
 import cors from "@fastify/cors";
 import multipart from "@fastify/multipart";
 import { authRoutes } from "../../src/routes/auth.routes";
+import { eventRoutes } from "../../src/routes/event.routes";
 
 /**
  * Cria uma instância do Fastify para testes
@@ -17,6 +18,7 @@ export async function createTestApp(): Promise<FastifyInstance> {
   // Rotas
   app.get("/health", async () => ({ status: "ok" }));
   await app.register(authRoutes, { prefix: "/api/auth" });
+  await app.register(eventRoutes, { prefix: '/api/events' });
 
   return app;
 }
