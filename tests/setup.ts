@@ -22,11 +22,11 @@ beforeAll(async () => {
 
 // Executar antes de CADA teste
 beforeEach(async () => {
-  await prisma.photographer.deleteMany();
-  await prisma.user.deleteMany();
   await prisma.photo.deleteMany();
   await prisma.gallery.deleteMany();
+  await prisma.photographer.deleteMany();
   await prisma.event.deleteMany();
+  await prisma.user.deleteMany();
 });
 
 // Executar depois de TODOS os testes
