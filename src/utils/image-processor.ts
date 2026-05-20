@@ -16,6 +16,17 @@ export interface ProcessedImages {
   fileSize: number;
 }
 
+export interface ProcessedBuffers {
+  buffers: {
+    original: Buffer;
+    thumbnail: Buffer;
+    medium: Buffer;
+    large: Buffer;
+  };
+  dimensions: ImageDimensions;
+  fileSize: number;
+}
+
 /**
  * Processar imagem: gerar múltiplos tamanhos
  */
@@ -99,6 +110,39 @@ export class ImageProcessor {
       large: paths.large,
       dimensions,
       fileSize: stats.size,
+    };
+  }
+
+  /**
+   * Processar imagem em memória — retorna buffers para cada tamanho (sem escrever em disco)
+   */
+  static async processToBuffers(buffer: Buffer): Promise<ProcessedBuffers> {
+    const metadata = await sharp(buffer).metadata();
+
+    if (!metadata.width || !metadata.height) {
+      throw new Error('Não foi possível obter dimensões da imagem');
+    }
+
+    const [original, thumbnail, medium, large] = await Promise.all([
+      sharp(buffer).jpeg({ quality: 95 }).toBuffer(),
+      sharp(buffer)
+        .resize(this.SIZES.thumbnail, null, { fit: 'inside', withoutEnlargement: true })
+        .jpeg({ quality: 80 })
+        .toBuffer(),
+      sharp(buffer)
+        .resize(this.SIZES.medium, null, { fit: 'inside', withoutEnlargement: true })
+        .jpeg({ quality: 85 })
+        .toBuffer(),
+      sharp(buffer)
+        .resize(this.SIZES.large, null, { fit: 'inside', withoutEnlargement: true })
+        .jpeg({ quality: 90 })
+        .toBuffer(),
+    ]);
+
+    return {
+      buffers: { original, thumbnail, medium, large },
+      dimensions: { width: metadata.width, height: metadata.height },
+      fileSize: original.length,
     };
   }
 

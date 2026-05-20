@@ -13,8 +13,15 @@ export const config = {
   jwtExpiresIn: '7d',
 
   // Upload
-  uploadDir: process.env.UPLOAD_DIR || './uploads',
   maxFileSize: Number(process.env.MAX_FILE_SIZE) || 10 * 1024 * 1024, // 10MB
+
+  // S3 / MinIO
+  s3Endpoint: process.env.S3_ENDPOINT || 'http://localhost:9000',
+  s3Region: process.env.S3_REGION || 'us-east-1',
+  s3Bucket: process.env.S3_BUCKET || 'cosplay-angola',
+  s3AccessKey: process.env.S3_ACCESS_KEY || 'minioadmin',
+  s3SecretKey: process.env.S3_SECRET_KEY || 'minioadmin',
+  s3PublicUrl: process.env.S3_PUBLIC_URL || 'http://localhost:9000/cosplay-angola',
 };
 
 // Validar variáveis obrigatórias

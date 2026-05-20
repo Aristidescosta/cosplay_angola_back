@@ -2,6 +2,7 @@ import Fastify from "fastify";
 import cors from "@fastify/cors";
 import multipart from "@fastify/multipart";
 import { config } from "./config/env";
+import { storageService } from "./services/storage.service";
 import { authRoutes } from "./routes/auth.routes";
 import { eventRoutes } from "./routes/event.routes";
 import { galleryRoutes } from "./routes/gallery.routes";
@@ -63,6 +64,8 @@ async function start() {
   try {
     await registerPlugins();
     await registerRoutes();
+
+    await storageService.ensureBucketExists();
 
     await app.listen({
       port: config.port,

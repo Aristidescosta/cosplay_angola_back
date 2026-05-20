@@ -8,6 +8,7 @@ import {
   generateS3Keys,
 } from '../utils/file-upload';
 import { ImageProcessor } from '../utils/image-processor';
+import { storageService } from './storage.service';
 import { GalleryService } from './gallery.service';
 
 const galleryService = new GalleryService();
@@ -50,10 +51,18 @@ export class PhotoService {
     // 5. Gerar chaves S3 (caminhos)
     const keys = generateS3Keys(filename, galleryId);
 
-    // 6. Processar imagem (gerar thumbnails, etc)
-    const processed = await ImageProcessor.processUpload(buffer, filename);
+    // 6. Processar imagem em memória (gerar múltiplos tamanhos)
+    const processed = await ImageProcessor.processToBuffers(buffer);
 
-    // 7. Criar registo na BD
+    // 7. Fazer upload de todos os tamanhos para o MinIO/S3 em paralelo
+    await Promise.all([
+      storageService.upload(keys.originalKey, processed.buffers.original, 'image/jpeg'),
+      storageService.upload(keys.thumbnailKey, processed.buffers.thumbnail, 'image/jpeg'),
+      storageService.upload(keys.mediumKey, processed.buffers.medium, 'image/jpeg'),
+      storageService.upload(keys.largeKey, processed.buffers.large, 'image/jpeg'),
+    ]);
+
+    // 8. Criar registo na BD
     const photo = await prisma.photo.create({
       data: {
         galleryId,
@@ -70,7 +79,7 @@ export class PhotoService {
         caption: caption || null,
         tags: tags || [],
         published: true,
-        order: 0, // será atualizado depois
+        order: 0,
       },
     });
 
@@ -263,9 +272,13 @@ export class PhotoService {
       throw new Error('Sem permissões para apagar esta foto');
     }
 
-    // Apagar ficheiros do filesystem
-    const filename = photo.s3Key.split('/').pop()!;
-    await ImageProcessor.deleteImage(filename);
+    // Apagar todos os tamanhos do S3/MinIO
+    await Promise.all([
+      storageService.delete(photo.originalKey),
+      storageService.delete(photo.thumbnailKey),
+      storageService.delete(photo.mediumKey),
+      storageService.delete(photo.largeKey),
+    ]);
 
     // Apagar da BD
     await prisma.photo.delete({
