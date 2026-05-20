@@ -280,6 +280,41 @@ export class PhotoController {
   }
 
   /**
+   * DELETE /api/photos
+   * Apagar várias fotos
+   */
+  async deleteMany(request: FastifyRequest, reply: FastifyReply) {
+    try {
+      const { ids } = request.body as { ids: string[] };
+      // @ts-ignore
+      const userId = request.user.userId;
+      // @ts-ignore
+      const userRole = request.user.role;
+
+      if (!Array.isArray(ids) || ids.length === 0) {
+        return reply.status(400).send({
+          success: false,
+          message: 'ids deve ser um array não vazio',
+        });
+      }
+
+      const result = await photoService.deleteMany(ids, userId, userRole);
+
+      return reply.status(200).send({
+        success: true,
+        message: `${result.deleted} foto(s) apagada(s) com sucesso`,
+        data: result,
+      });
+    } catch (error: any) {
+      const status = error.message.includes('permissões') ? 403 : 400;
+      return reply.status(status).send({
+        success: false,
+        message: error.message || 'Erro ao apagar fotos',
+      });
+    }
+  }
+
+  /**
    * POST /api/galleries/:galleryId/photos/reorder
    * Reordenar fotos
    */

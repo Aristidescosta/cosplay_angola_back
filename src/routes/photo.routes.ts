@@ -54,6 +54,15 @@ export async function photoRoutes(app: FastifyInstance) {
   });
 
   /**
+   * DELETE /api/photos
+   * Apagar várias fotos — body: { ids: string[] }
+   */
+  app.delete('/', {
+    preHandler: authMiddleware,
+    handler: photoController.deleteMany,
+  });
+
+  /**
    * DELETE /api/photos/:id
    * Apagar foto (dono ou ADMIN)
    */

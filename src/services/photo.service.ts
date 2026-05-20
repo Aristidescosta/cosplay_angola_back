@@ -272,23 +272,57 @@ export class PhotoService {
       throw new Error('Sem permissões para apagar esta foto');
     }
 
-    // Apagar todos os tamanhos do S3/MinIO
-    await Promise.all([
-      storageService.delete(photo.originalKey),
-      storageService.delete(photo.thumbnailKey),
-      storageService.delete(photo.mediumKey),
-      storageService.delete(photo.largeKey),
-    ]);
+    // Apagar todos os tamanhos do S3/MinIO (ignorar keys nulas)
+    const keysToDelete = [
+      photo.originalKey,
+      photo.thumbnailKey,
+      photo.mediumKey,
+      photo.largeKey,
+    ].filter((k): k is string => k !== null);
+
+    await Promise.all(keysToDelete.map((key) => storageService.delete(key)));
 
     // Apagar da BD
-    await prisma.photo.delete({
-      where: { id },
-    });
+    await prisma.photo.delete({ where: { id } });
 
     // Atualizar contador da galeria
     await galleryService.updatePhotoCount(photo.galleryId);
 
     return { message: 'Foto apagada com sucesso' };
+  }
+
+  /**
+   * Apagar várias fotos de uma vez
+   */
+  async deleteMany(ids: string[], userId: string, userRole: string) {
+    const photos = await prisma.photo.findMany({
+      where: { id: { in: ids } },
+      include: { gallery: { select: { photographerId: true } } },
+    });
+
+    if (photos.length === 0) {
+      throw new Error('Nenhuma foto encontrada');
+    }
+
+    if (userRole !== 'ADMIN') {
+      const unauthorized = photos.some((p) => p.gallery.photographerId !== userId);
+      if (unauthorized) {
+        throw new Error('Sem permissões para apagar uma ou mais fotos');
+      }
+    }
+
+    const keysToDelete = photos
+      .flatMap((p) => [p.originalKey, p.thumbnailKey, p.mediumKey, p.largeKey])
+      .filter((k): k is string => k !== null);
+
+    await Promise.all(keysToDelete.map((key) => storageService.delete(key)));
+
+    await prisma.photo.deleteMany({ where: { id: { in: ids } } });
+
+    const galleryIds = [...new Set(photos.map((p) => p.galleryId))];
+    await Promise.all(galleryIds.map((gId) => galleryService.updatePhotoCount(gId)));
+
+    return { deleted: photos.length };
   }
 
   /**
