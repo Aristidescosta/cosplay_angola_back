@@ -41,6 +41,15 @@ export async function eventRoutes(app: FastifyInstance) {
   });
 
   /**
+   * POST /api/events/:id/cover
+   * Upload de imagem de capa (só ADMIN)
+   */
+  app.post('/:id/cover', {
+    preHandler: [authMiddleware, requireRole('ADMIN')],
+    handler: eventController.uploadCover,
+  });
+
+  /**
    * PUT /api/events/:id
    * Atualizar evento (só ADMIN)
    */

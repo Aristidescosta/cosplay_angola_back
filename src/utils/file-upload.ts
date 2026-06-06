@@ -1,22 +1,19 @@
-import { MultipartFile } from '@fastify/multipart';
 import mime from 'mime-types';
 import { v4 as uuidv4 } from 'uuid';
 
 /**
  * Validar se ficheiro é imagem
  */
-export function validateImageFile(file: MultipartFile): void {
-  // Verificar tipo MIME
+export function validateImageFile(mimetype: string): void {
   const allowedMimes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
-  
-  if (!file.mimetype || !allowedMimes.includes(file.mimetype)) {
+
+  if (!mimetype || !allowedMimes.includes(mimetype)) {
     throw new Error(
-      `Tipo de ficheiro inválido: ${file.mimetype}. Apenas JPEG, PNG e WebP são permitidos.`
+      `Tipo de ficheiro inválido: ${mimetype}. Apenas JPEG, PNG e WebP são permitidos.`
     );
   }
 
-  // Validar extensão do ficheiro
-  const ext = mime.extension(file.mimetype);
+  const ext = mime.extension(mimetype);
   if (!ext) {
     throw new Error('Extensão de ficheiro inválida');
   }

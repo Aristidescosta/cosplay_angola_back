@@ -1,5 +1,4 @@
 import { prisma } from '../config/database';
-import { MultipartFile } from '@fastify/multipart';
 import { UpdatePhotoInput, PublishPhotoInput } from '../schemas/photo.schema';
 import {
   validateImageFile,
@@ -11,50 +10,37 @@ import { ImageProcessor } from '../utils/image-processor';
 import { storageService } from './storage.service';
 import { GalleryService } from './gallery.service';
 
+export interface FileInput {
+  buffer: Buffer;
+  filename: string;
+  mimetype: string;
+}
+
 const galleryService = new GalleryService();
 
 export class PhotoService {
   /**
-   * Upload de foto
+   * Upload de foto — recebe buffer já lido pelo controller
    */
   async upload(
-    file: MultipartFile,
+    file: FileInput,
     galleryId: string,
     userId: string,
     caption?: string,
     tags?: string[]
   ) {
-    // 1. Verificar se galeria existe e se user tem permissão
-    const gallery = await prisma.gallery.findUnique({
-      where: { id: galleryId },
-    });
+    const gallery = await prisma.gallery.findUnique({ where: { id: galleryId } });
 
-    if (!gallery) {
-      throw new Error('Galeria não encontrada');
-    }
+    if (!gallery) throw new Error('Galeria não encontrada');
+    if (gallery.photographerId !== userId) throw new Error('Sem permissões para fazer upload nesta galeria');
 
-    // Verificar se é o dono da galeria
-    if (gallery.photographerId !== userId) {
-      throw new Error('Sem permissões para fazer upload nesta galeria');
-    }
+    validateImageFile(file.mimetype);
+    validateFileSize(file.buffer.length);
 
-    // 2. Validar ficheiro
-    validateImageFile(file);
-
-    // 3. Ler ficheiro para buffer
-    const buffer = await file.toBuffer();
-    validateFileSize(buffer.length);
-
-    // 4. Gerar nome único
     const { filename } = generateUniqueFilename(file.filename);
-
-    // 5. Gerar chaves S3 (caminhos)
     const keys = generateS3Keys(filename, galleryId);
+    const processed = await ImageProcessor.processToBuffers(file.buffer);
 
-    // 6. Processar imagem em memória (gerar múltiplos tamanhos)
-    const processed = await ImageProcessor.processToBuffers(buffer);
-
-    // 7. Fazer upload de todos os tamanhos para o MinIO/S3 em paralelo
     await Promise.all([
       storageService.upload(keys.originalKey, processed.buffers.original, 'image/jpeg'),
       storageService.upload(keys.thumbnailKey, processed.buffers.thumbnail, 'image/jpeg'),
@@ -62,7 +48,6 @@ export class PhotoService {
       storageService.upload(keys.largeKey, processed.buffers.large, 'image/jpeg'),
     ]);
 
-    // 8. Criar registo na BD
     const photo = await prisma.photo.create({
       data: {
         galleryId,
@@ -83,20 +68,15 @@ export class PhotoService {
       },
     });
 
-    // 8. Atualizar contador de fotos na galeria
     await galleryService.updatePhotoCount(galleryId);
 
     return photo;
   }
 
   /**
-   * Upload múltiplo de fotos
+   * Upload múltiplo — recebe buffers já lidos pelo controller
    */
-  async uploadMultiple(
-    files: MultipartFile[],
-    galleryId: string,
-    userId: string
-  ) {
+  async uploadMultiple(files: FileInput[], galleryId: string, userId: string) {
     const results = [];
 
     for (const file of files) {
@@ -104,11 +84,7 @@ export class PhotoService {
         const photo = await this.upload(file, galleryId, userId);
         results.push({ success: true, photo });
       } catch (error: any) {
-        results.push({
-          success: false,
-          filename: file.filename,
-          error: error.message,
-        });
+        results.push({ success: false, filename: file.filename, error: error.message });
       }
     }
 

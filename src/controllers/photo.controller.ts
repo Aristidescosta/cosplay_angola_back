@@ -1,5 +1,4 @@
 import { FastifyRequest, FastifyReply } from 'fastify';
-import { MultipartFile } from '@fastify/multipart';
 import { PhotoService } from '../services/photo.service';
 import {
   updatePhotoSchema,
@@ -60,8 +59,10 @@ export class PhotoController {
         });
       }
 
+      const buffer = await data.toBuffer();
+
       const photo = await photoService.upload(
-        data as MultipartFile,
+        { buffer, filename: data.filename, mimetype: data.mimetype },
         galleryId,
         userId,
         caption,
@@ -92,12 +93,13 @@ export class PhotoController {
 
       // Obter múltiplos ficheiros
       const parts = request.parts();
-      const files: MultipartFile[] = [];
+      const files: { buffer: Buffer; filename: string; mimetype: string }[] = [];
       let galleryId: string | undefined;
 
       for await (const part of parts) {
         if (part.type === 'file') {
-          files.push(part as MultipartFile);
+          const buffer = await part.toBuffer();
+          files.push({ buffer, filename: part.filename, mimetype: part.mimetype });
         } else if (part.fieldname === 'galleryId') {
           galleryId = part.value as string;
         }

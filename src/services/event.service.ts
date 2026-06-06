@@ -1,5 +1,9 @@
 import { prisma } from '../config/database';
 import { CreateEventInput, UpdateEventInput, PublishEventInput } from '../schemas/event.schema';
+import { storageService } from './storage.service';
+import { validateImageFile, validateFileSize, generateUniqueFilename } from '../utils/file-upload';
+import sharp from 'sharp';
+import { config } from '../config/env';
 
 export class EventService {
   /**
@@ -204,10 +208,52 @@ export class EventService {
   }
 
   /**
+   * Upload de imagem de capa do evento
+   */
+  async uploadCover(
+    id: string,
+    file: { buffer: Buffer; filename: string; mimetype: string }
+  ) {
+    const event = await this.getById(id);
+
+    validateImageFile(file.mimetype);
+    validateFileSize(file.buffer.length);
+
+    // Apagar capa anterior do S3 se existir
+    if (event.coverImageUrl) {
+      const oldKey = event.coverImageUrl.replace(`${config.s3PublicUrl}/`, '');
+      await storageService.delete(oldKey).catch(() => {});
+    }
+
+    const { filename } = generateUniqueFilename(file.filename);
+    const key = `events/${id}/cover/${filename}`;
+
+    const resized = await sharp(file.buffer)
+      .resize(1920, null, { fit: 'inside', withoutEnlargement: true })
+      .jpeg({ quality: 90 })
+      .toBuffer();
+
+    const coverImageUrl = await storageService.upload(key, resized, 'image/jpeg');
+
+    const updated = await prisma.event.update({
+      where: { id },
+      data: { coverImageUrl },
+    });
+
+    return updated;
+  }
+
+  /**
    * Apagar evento
    */
   async delete(id: string) {
-    await this.getById(id);
+    const event = await this.getById(id);
+
+    // Apagar capa do S3 se existir
+    if (event.coverImageUrl) {
+      const key = event.coverImageUrl.replace(`${config.s3PublicUrl}/`, '');
+      await storageService.delete(key).catch(() => {});
+    }
 
     await prisma.event.delete({
       where: { id },

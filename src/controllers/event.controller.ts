@@ -175,6 +175,43 @@ export class EventController {
   }
 
   /**
+   * POST /api/events/:id/cover
+   * Upload de imagem de capa
+   */
+  async uploadCover(request: FastifyRequest, reply: FastifyReply) {
+    try {
+      const { id } = request.params as { id: string };
+
+      const data = await request.file();
+
+      if (!data) {
+        return reply.status(400).send({
+          success: false,
+          message: 'Nenhum ficheiro enviado',
+        });
+      }
+
+      const buffer = await data.toBuffer();
+      const event = await eventService.uploadCover(id, {
+        buffer,
+        filename: data.filename,
+        mimetype: data.mimetype,
+      });
+
+      return reply.status(200).send({
+        success: true,
+        message: 'Imagem de capa atualizada com sucesso',
+        data: event,
+      });
+    } catch (error: any) {
+      return reply.status(400).send({
+        success: false,
+        message: error.message || 'Erro ao fazer upload da capa',
+      });
+    }
+  }
+
+  /**
    * DELETE /api/events/:id
    * Apagar evento
    */
