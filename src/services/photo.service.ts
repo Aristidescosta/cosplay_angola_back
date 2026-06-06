@@ -98,6 +98,7 @@ export class PhotoService {
     galleryId?: string;
     published?: boolean;
     tags?: string[];
+    search?: string;
     limit?: number;
     offset?: number;
   }) {
@@ -112,9 +113,15 @@ export class PhotoService {
     }
 
     if (filters?.tags && filters.tags.length > 0) {
-      where.tags = {
-        hasSome: filters.tags,
-      };
+      where.tags = { hasSome: filters.tags };
+    }
+
+    if (filters?.search) {
+      where.OR = [
+        { caption: { contains: filters.search, mode: 'insensitive' } },
+        { filename: { contains: filters.search, mode: 'insensitive' } },
+        { tags: { hasSome: [filters.search.toLowerCase()] } },
+      ];
     }
 
     const [photos, total] = await Promise.all([

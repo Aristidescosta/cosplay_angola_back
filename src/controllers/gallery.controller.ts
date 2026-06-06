@@ -108,7 +108,7 @@ export class GalleryController {
       const userRole = request.user?.role;
       const includeUnpublished = userRole === 'ADMIN';
 
-      const galleries = await galleryService.getByEventId(eventId, includeUnpublished);
+      const galleries = await galleryService.getByEventId(eventId, includeUnpublished, query.search);
 
       return reply.status(200).send({
         success: true,

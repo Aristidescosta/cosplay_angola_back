@@ -149,6 +149,7 @@ export class PhotoController {
         galleryId: query.galleryId,
         published: query.published === 'true' ? true : query.published === 'false' ? false : undefined,
         tags: query.tags ? query.tags.split(',') : undefined,
+        search: query.search,
         limit: query.limit ? parseInt(query.limit) : 50,
         offset: query.offset ? parseInt(query.offset) : 0,
       };

@@ -183,11 +183,18 @@ export class GalleryService {
   /**
    * Obter galerias de um evento específico
    */
-  async getByEventId(eventId: string, includeUnpublished = false) {
+  async getByEventId(eventId: string, includeUnpublished = false, search?: string) {
     const where: any = { eventId };
 
     if (!includeUnpublished) {
       where.published = true;
+    }
+
+    if (search) {
+      where.OR = [
+        { title: { contains: search, mode: 'insensitive' } },
+        { description: { contains: search, mode: 'insensitive' } },
+      ];
     }
 
     const galleries = await prisma.gallery.findMany({
