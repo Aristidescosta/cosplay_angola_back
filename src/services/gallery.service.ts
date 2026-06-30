@@ -77,45 +77,43 @@ export class GalleryService {
       ];
     }
 
-    const [galleries, total] = await Promise.all([
-      prisma.gallery.findMany({
-        where,
-        include: {
-          event: {
-            select: {
-              id: true,
-              title: true,
-              slug: true,
-              date: true,
-            },
-          },
-          photographer: {
-            select: {
-              id: true,
-              name: true,
-              email: true,
-            },
-          },
-          _count: {
-            select: {
-              photos: true,
-            },
+    const limit = filters?.limit ?? 20;
+    const offset = filters?.offset ?? 0;
+
+    const allGalleries = await prisma.gallery.findMany({
+      where,
+      include: {
+        event: {
+          select: {
+            id: true,
+            title: true,
+            slug: true,
+            date: true,
           },
         },
-        orderBy: {
-          createdAt: 'desc',
+        photographer: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+          },
         },
-        take: filters?.limit || 20,
-        skip: filters?.offset || 0,
-      }),
-      prisma.gallery.count({ where }),
-    ]);
+        _count: {
+          select: {
+            photos: true,
+          },
+        },
+      },
+      orderBy: {
+        createdAt: 'desc',
+      },
+    });
 
     return {
-      galleries,
-      total,
-      limit: filters?.limit || 20,
-      offset: filters?.offset || 0,
+      galleries: allGalleries.slice(offset, offset + limit),
+      total: allGalleries.length,
+      limit,
+      offset,
     };
   }
 

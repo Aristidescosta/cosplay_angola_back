@@ -124,39 +124,37 @@ export class PhotoService {
       ];
     }
 
-    const [photos, total] = await Promise.all([
-      prisma.photo.findMany({
-        where,
-        include: {
-          gallery: {
-            select: {
-              id: true,
-              title: true,
-              event: {
-                select: {
-                  id: true,
-                  title: true,
-                  slug: true,
-                },
+    const limit = filters?.limit ?? 50;
+    const offset = filters?.offset ?? 0;
+
+    const allPhotos = await prisma.photo.findMany({
+      where,
+      include: {
+        gallery: {
+          select: {
+            id: true,
+            title: true,
+            event: {
+              select: {
+                id: true,
+                title: true,
+                slug: true,
               },
             },
           },
         },
-        orderBy: [
-          { order: 'asc' },
-          { uploadedAt: 'desc' },
-        ],
-        take: filters?.limit || 50,
-        skip: filters?.offset || 0,
-      }),
-      prisma.photo.count({ where }),
-    ]);
+      },
+      orderBy: [
+        { order: 'asc' },
+        { uploadedAt: 'desc' },
+      ],
+    });
 
     return {
-      photos,
-      total,
-      limit: filters?.limit || 50,
-      offset: filters?.offset || 0,
+      photos: allPhotos.slice(offset, offset + limit),
+      total: allPhotos.length,
+      limit,
+      offset,
     };
   }
 

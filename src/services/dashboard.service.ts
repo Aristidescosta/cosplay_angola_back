@@ -89,7 +89,6 @@ export class DashboardService {
 
   async getRecentEvents(limit = 5) {
     const events = await prisma.event.findMany({
-      take: limit,
       orderBy: { createdAt: 'desc' },
       select: {
         id: true,
@@ -102,7 +101,7 @@ export class DashboardService {
       },
     });
 
-    return events.map((e) => ({
+    return events.slice(0, limit).map((e) => ({
       id: e.id,
       title: e.title,
       date: e.date,
@@ -115,7 +114,6 @@ export class DashboardService {
 
   async getRecentUploads(limit = 8) {
     const photos = await prisma.photo.findMany({
-      take: limit,
       orderBy: { uploadedAt: 'desc' },
       where: { published: true },
       select: {
@@ -132,7 +130,7 @@ export class DashboardService {
       },
     });
 
-    return photos.map((p) => ({
+    return photos.slice(0, limit).map((p) => ({
       id: p.id,
       thumbnailUrl: p.thumbnailKey ? storageService.getPublicUrl(p.thumbnailKey) : null,
       caption: p.caption,

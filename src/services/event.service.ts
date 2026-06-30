@@ -58,37 +58,35 @@ export class EventService {
       ];
     }
 
-    const [events, total] = await Promise.all([
-      prisma.event.findMany({
-        where,
-        include: {
-          galleries: {
-            select: {
-              id: true,
-              title: true,
-              photoCount: true,
-            },
-          },
-          _count: {
-            select: {
-              galleries: true,
-            },
+    const limit = filters?.limit ?? 20;
+    const offset = filters?.offset ?? 0;
+
+    const allEvents = await prisma.event.findMany({
+      where,
+      include: {
+        galleries: {
+          select: {
+            id: true,
+            title: true,
+            photoCount: true,
           },
         },
-        orderBy: {
-          date: 'desc',
+        _count: {
+          select: {
+            galleries: true,
+          },
         },
-        take: filters?.limit || 20,
-        skip: filters?.offset || 0,
-      }),
-      prisma.event.count({ where }),
-    ]);
+      },
+      orderBy: {
+        date: 'desc',
+      },
+    });
 
     return {
-      events,
-      total,
-      limit: filters?.limit || 20,
-      offset: filters?.offset || 0,
+      events: allEvents.slice(offset, offset + limit),
+      total: allEvents.length,
+      limit,
+      offset,
     };
   }
 
