@@ -44,6 +44,30 @@ export async function authMiddleware(
 }
 
 /**
+ * Middleware para rotas públicas que precisam saber se o pedido
+ * vem de um utilizador autenticado, sem bloquear pedidos anónimos.
+ * Nunca rejeita: se não houver token, ou for inválido, o pedido
+ * continua sem `request.user`.
+ */
+export async function optionalAuthMiddleware(
+  request: FastifyRequest,
+  _reply: FastifyReply,
+) {
+  const authHeader = request.headers.authorization;
+  if (!authHeader) return;
+
+  const [scheme, token] = authHeader.split(" ");
+  if (scheme !== "Bearer" || !token) return;
+
+  try {
+    // @ts-ignore
+    request.user = JwtUtils.verify(token);
+  } catch {
+    // Token inválido/expirado — segue como pedido anónimo
+  }
+}
+
+/**
  * Middleware para verificar se user tem role específica
  */
 export function requireRole(...allowedRoles: string[]) {

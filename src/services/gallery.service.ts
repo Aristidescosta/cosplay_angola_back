@@ -119,8 +119,10 @@ export class GalleryService {
 
   /**
    * Obter galeria por ID
+   * Galerias não publicadas (ou cujo evento não está publicado) só
+   * são devolvidas ao dono da galeria ou a um ADMIN.
    */
-  async getById(id: string) {
+  async getById(id: string, userId?: string, userRole?: string) {
     const gallery = await prisma.gallery.findUnique({
       where: { id },
       include: {
@@ -131,6 +133,7 @@ export class GalleryService {
             slug: true,
             date: true,
             location: true,
+            published: true,
           },
         },
         photographer: {
@@ -172,6 +175,13 @@ export class GalleryService {
     });
 
     if (!gallery) {
+      throw new Error('Galeria não encontrada');
+    }
+
+    const isOwnerOrAdmin =
+      userRole === 'ADMIN' || gallery.photographerId === userId;
+
+    if ((!gallery.published || !gallery.event.published) && !isOwnerOrAdmin) {
       throw new Error('Galeria não encontrada');
     }
 
@@ -222,7 +232,7 @@ export class GalleryService {
    * Atualizar galeria
    */
   async update(id: string, data: UpdateGalleryInput, userId: string, userRole: string) {
-    const gallery = await this.getById(id);
+    const gallery = await this.getById(id, userId, userRole);
 
     // Verificar permissões: só o dono ou ADMIN pode atualizar
     if (gallery.photographerId !== userId && userRole !== 'ADMIN') {
@@ -255,7 +265,7 @@ export class GalleryService {
    * Publicar/despublicar galeria
    */
   async publish(id: string, data: PublishGalleryInput, userId: string, userRole: string) {
-    const gallery = await this.getById(id);
+    const gallery = await this.getById(id, userId, userRole);
 
     // Verificar permissões
     if (gallery.photographerId !== userId && userRole !== 'ADMIN') {
@@ -276,7 +286,7 @@ export class GalleryService {
    * Apagar galeria
    */
   async delete(id: string, userId: string, userRole: string) {
-    const gallery = await this.getById(id);
+    const gallery = await this.getById(id, userId, userRole);
 
     // Verificar permissões
     if (gallery.photographerId !== userId && userRole !== 'ADMIN') {

@@ -1,7 +1,11 @@
 import { FastifyInstance } from 'fastify';
 import { GalleryController } from '../controllers/gallery.controller';
 import { PhotoController } from '../controllers/photo.controller';
-import { authMiddleware, requireRole } from '../middlewares/auth.middleware';
+import {
+  authMiddleware,
+  optionalAuthMiddleware,
+  requireRole,
+} from '../middlewares/auth.middleware';
 
 const galleryController = new GalleryController();
 const photoController = new PhotoController();
@@ -15,9 +19,13 @@ export async function galleryRoutes(app: FastifyInstance) {
 
   /**
    * GET /api/galleries/:id
-   * Ver detalhes de galeria (público)
+   * Ver detalhes de galeria (público, mas rascunhos só são
+   * visíveis para o dono ou ADMIN)
    */
-  app.get('/:id', galleryController.getById);
+  app.get('/:id', {
+    preHandler: optionalAuthMiddleware,
+    handler: galleryController.getById,
+  });
 
   /**
    * POST /api/galleries

@@ -80,7 +80,11 @@ export class GalleryController {
   async getById(request: FastifyRequest, reply: FastifyReply) {
     try {
       const { id } = request.params as { id: string };
-      const gallery = await galleryService.getById(id);
+      // @ts-ignore
+      const userId = request.user?.userId;
+      // @ts-ignore
+      const userRole = request.user?.role;
+      const gallery = await galleryService.getById(id, userId, userRole);
 
       return reply.status(200).send({
         success: true,
