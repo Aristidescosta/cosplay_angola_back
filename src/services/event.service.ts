@@ -144,7 +144,7 @@ export class EventService {
       },
     });
 
-    if (!event) {
+    if (!event || !event.published) {
       throw new Error('Evento não encontrado');
     }
 

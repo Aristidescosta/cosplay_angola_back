@@ -141,6 +141,12 @@ export class PhotoService {
                 slug: true,
               },
             },
+            photographer: {
+              select: {
+                id: true,
+                name: true,
+              },
+            },
           },
         },
       },
