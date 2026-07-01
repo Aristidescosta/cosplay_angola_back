@@ -4,13 +4,14 @@ import { storageService } from './storage.service';
 import { validateImageFile, validateFileSize, generateUniqueFilename } from '../utils/file-upload';
 import sharp from 'sharp';
 import { config } from '../config/env';
+import { slugify } from '../utils/slug';
 
 export class EventService {
   /**
    * Criar novo evento
    */
   async create(data: CreateEventInput) {
-    const slug = this.generateSlug(data.title);
+    const slug = slugify(data.title);
 
     const existingEvent = await prisma.event.findUnique({
       where: { slug },
@@ -129,6 +130,7 @@ export class EventService {
   async getBySlug(slug: string) {
     const event = await prisma.event.findUnique({
       where: { slug },
+
       include: {
         galleries: {
           where: { published: true },
@@ -159,7 +161,7 @@ export class EventService {
 
     let slug: string | undefined;
     if (data.title) {
-      slug = this.generateSlug(data.title);
+      slug = slugify(data.title);
 
       const existingEvent = await prisma.event.findFirst({
         where: {
@@ -264,14 +266,5 @@ export class EventService {
    * Gerar slug a partir do título
    * Ex: "CCXP Luanda 2024" -> "ccxp-luanda-2024"
    */
-  private generateSlug(title: string): string {
-    return title
-      .toLowerCase()
-      .normalize('NFD') // Remove acentos
-      .replace(/[\u0300-\u036f]/g, '')
-      .replace(/[^\w\s-]/g, '') // Remove caracteres especiais
-      .replace(/\s+/g, '-') // Espaços viram hífens
-      .replace(/-+/g, '-') // Remove hífens duplicados
-      .trim();
-  }
+ 
 }

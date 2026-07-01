@@ -214,7 +214,7 @@ export class PhotoController {
         return reply.status(400).send({
           success: false,
           message: 'Dados inválidos',
-          errors: error.errors,
+          errors: error.issues,
         });
       }
 

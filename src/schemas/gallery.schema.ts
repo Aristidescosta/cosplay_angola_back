@@ -6,7 +6,7 @@ import { z } from 'zod';
 export const createGallerySchema = z.object({
   eventId: z.string().uuid('ID de evento inválido'),
   title: z.string().min(3, 'Título deve ter no mínimo 3 caracteres'),
-  description: z.string().optional(),
+  description: z.string().max(20000).optional(),
 });
 
 /**
@@ -14,7 +14,7 @@ export const createGallerySchema = z.object({
  */
 export const updateGallerySchema = z.object({
   title: z.string().min(3).optional(),
-  description: z.string().optional(),
+  description: z.string().max(20000).optional(),
   coverPhotoId: z.string().uuid().optional(),
   published: z.boolean().optional(),
 });

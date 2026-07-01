@@ -1,12 +1,12 @@
 
 import { CreateTag, FilterTag, UpdateTag } from "../schemas/TagSchema";
-import { generateSlug } from "../utils/generateSlug";
+import { slugify } from "../utils/slug";
 import { prisma } from "../config/database";
 import { Tag } from "../generated/prisma/client";
 
 export class TagService {
     async create(data: CreateTag): Promise<Tag> {
-        const slug = generateSlug(data.name);
+        const slug = slugify(data.name);
         const existingTag = await prisma.tag.findUnique({
             where: { slug }
         })
@@ -28,7 +28,7 @@ export class TagService {
             throw new Error('Tag não encontrada');
 
         if (data.name && data.name !== existing.name) {
-            const slug = generateSlug(data.name);
+            const slug = slugify(data.name);
             const slugConflict = await prisma.tag.findUnique({ where: { slug } });
             if (slugConflict && slugConflict.id !== id)
                 throw new Error('Já existe uma tag com este nome');
@@ -37,7 +37,7 @@ export class TagService {
         const tagUpdated = await prisma.tag.update({
             where: { id },
             data: {
-                ...(data.name !== undefined && { name: data.name, slug: generateSlug(data.name) }),
+                ...(data.name !== undefined && { name: data.name, slug: slugify(data.name) }),
                 ...(data.category !== undefined && { category: data.category }),
             }
         })

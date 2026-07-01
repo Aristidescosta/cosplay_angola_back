@@ -85,6 +85,7 @@ model Gallery {
   // Relations
   event           Event     @relation(fields: [eventId], references: [id], onDelete: Cascade)
   photographer    User      @relation("PhotographerGalleries", fields: [photographerId], references: [id])
+
   photos          Photo[]
   
   @@map("galleries")
@@ -130,7 +131,10 @@ model Tag {
   category        TagCategory @default(OTHER)
   usageCount      Int       @default(0)
   createdAt       DateTime  @default(now())
-  
+
+
+
+
   @@map("tags")
   @@index([category])
 }

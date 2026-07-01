@@ -20,7 +20,7 @@ export class TagController {
                 return reply.status(400).send({
                     success: false,
                     message: 'Dados inválidos',
-                    errors: error.errors,
+                    errors: error.issues,
                 })
             }
             return reply.status(400).send({
@@ -45,7 +45,7 @@ export class TagController {
                 return reply.status(400).send({
                     success: false,
                     message: 'Dados inválidos',
-                    errors: error.errors,
+                    errors: error.issues,
                 })
             }
             return reply.status(400).send({
@@ -107,7 +107,7 @@ export class TagController {
                 return reply.status(400).send({
                     success: false,
                     message: 'Parâmetros inválidos',
-                    errors: error.errors,
+                    errors: error.issues,
                 })
             }
             return reply.status(400).send({
