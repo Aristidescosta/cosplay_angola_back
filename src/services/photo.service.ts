@@ -9,6 +9,7 @@ import {
 import { ImageProcessor } from '../utils/image-processor';
 import { storageService } from './storage.service';
 import { GalleryService } from './gallery.service';
+import { slugify } from '../utils/slug';
 
 export interface FileInput {
   buffer: Buffer;
@@ -68,7 +69,10 @@ export class PhotoService {
       },
     });
 
-    await galleryService.updatePhotoCount(galleryId);
+    await Promise.all([
+      this.incrementTagUsage(tags ?? []),
+      galleryService.updatePhotoCount(galleryId),
+    ]);
 
     return photo;
   }
@@ -204,7 +208,6 @@ export class PhotoService {
   ) {
     const photo = await this.getById(id);
 
-    // Verificar permissões
     if (photo.gallery.photographerId !== userId && userRole !== 'ADMIN') {
       throw new Error('Sem permissões para editar esta foto');
     }
@@ -218,6 +221,17 @@ export class PhotoService {
         published: data.published,
       },
     });
+
+    if (data.tags !== undefined) {
+      const oldTags = photo.tags;
+      const newTags = data.tags;
+      const added = newTags.filter((t) => !oldTags.includes(t));
+      const removed = oldTags.filter((t) => !newTags.includes(t));
+      await Promise.all([
+        this.incrementTagUsage(added),
+        this.decrementTagUsage(removed),
+      ]);
+    }
 
     return updated;
   }
@@ -233,7 +247,6 @@ export class PhotoService {
   ) {
     const photo = await this.getById(id);
 
-    // Verificar permissões
     if (photo.gallery.photographerId !== userId && userRole !== 'ADMIN') {
       throw new Error('Sem permissões para publicar esta foto');
     }
@@ -254,12 +267,10 @@ export class PhotoService {
   async delete(id: string, userId: string, userRole: string) {
     const photo = await this.getById(id);
 
-    // Verificar permissões
     if (photo.gallery.photographerId !== userId && userRole !== 'ADMIN') {
       throw new Error('Sem permissões para apagar esta foto');
     }
 
-    // Apagar todos os tamanhos do S3/MinIO (ignorar keys nulas)
     const keysToDelete = [
       photo.originalKey,
       photo.thumbnailKey,
@@ -269,11 +280,12 @@ export class PhotoService {
 
     await Promise.all(keysToDelete.map((key) => storageService.delete(key)));
 
-    // Apagar da BD
     await prisma.photo.delete({ where: { id } });
 
-    // Atualizar contador da galeria
-    await galleryService.updatePhotoCount(photo.galleryId);
+    await Promise.all([
+      this.decrementTagUsage(photo.tags),
+      galleryService.updatePhotoCount(photo.galleryId),
+    ]);
 
     return { message: 'Foto apagada com sucesso' };
   }
@@ -306,8 +318,13 @@ export class PhotoService {
 
     await prisma.photo.deleteMany({ where: { id: { in: ids } } });
 
+    const allTags = photos.flatMap((p) => p.tags);
     const galleryIds = [...new Set(photos.map((p) => p.galleryId))];
-    await Promise.all(galleryIds.map((gId) => galleryService.updatePhotoCount(gId)));
+
+    await Promise.all([
+      this.decrementTagUsage(allTags),
+      ...galleryIds.map((gId) => galleryService.updatePhotoCount(gId)),
+    ]);
 
     return { deleted: photos.length };
   }
@@ -316,7 +333,6 @@ export class PhotoService {
    * Reordenar fotos numa galeria
    */
   async reorder(galleryId: string, photoIds: string[]) {
-    // Atualizar ordem de cada foto
     const updates = photoIds.map((photoId, index) =>
       prisma.photo.update({
         where: { id: photoId },
@@ -327,5 +343,49 @@ export class PhotoService {
     await Promise.all(updates);
 
     return { message: 'Fotos reordenadas com sucesso' };
+  }
+
+  // ── helpers privados ────────────────────────────────────────────────────────
+
+  private async incrementTagUsage(names: string[]): Promise<void> {
+    if (names.length === 0) return;
+    const bySlug = new Map<string, { name: string; count: number }>();
+    for (const name of names) {
+      const slug = slugify(name);
+      const entry = bySlug.get(slug);
+      if (entry) {
+        entry.count += 1;
+      } else {
+        bySlug.set(slug, { name, count: 1 });
+      }
+    }
+    await Promise.all(
+      Array.from(bySlug.entries()).map(([slug, { name, count }]) =>
+        prisma.tag.upsert({
+          where: { slug },
+          create: { name, slug, usageCount: count },
+          update: { usageCount: { increment: count } },
+        })
+      )
+    );
+  }
+
+  // GREATEST(0, usageCount - n) via raw SQL para garantir que nunca fica negativo
+  private async decrementTagUsage(names: string[]): Promise<void> {
+    if (names.length === 0) return;
+    const counts = new Map<string, number>();
+    for (const name of names) {
+      const slug = slugify(name);
+      counts.set(slug, (counts.get(slug) ?? 0) + 1);
+    }
+    await Promise.all(
+      Array.from(counts.entries()).map(([slug, count]) =>
+        prisma.$executeRaw`
+          UPDATE tags
+          SET "usageCount" = GREATEST(0, "usageCount" - ${count})
+          WHERE slug = ${slug}
+        `
+      )
+    );
   }
 }
