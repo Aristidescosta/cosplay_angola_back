@@ -1,5 +1,5 @@
 
-import { CreateTag, FilterTag, UpdateTag } from "../schemas/TagSchema";
+import { CreateTag, FilterTag, UpdateTag } from "../schemas/tag.schema";
 import { slugify } from "../utils/slug";
 import { prisma } from "../config/database";
 import { Tag } from "../generated/prisma/client";

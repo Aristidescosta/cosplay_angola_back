@@ -1,5 +1,5 @@
 import { FastifyReply, FastifyRequest } from "fastify";
-import { createTagSchema, updateTagSchema, filterSchema } from "../schemas/TagSchema";
+import { createTagSchema, updateTagSchema, filterSchema } from "../schemas/tag.schema";
 import { TagService } from "../services/tag.service";
 import { ZodError } from "zod";
 
