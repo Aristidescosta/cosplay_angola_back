@@ -9,7 +9,7 @@ export function tagRoutes(app: FastifyInstance) {
     app.get('/', tagController.list);
     app.get('/:slug', tagController.getBySlug);
 
-    app.post('/', { preHandler: [authMiddleware, requireRole('ADIMIN')] }, tagController.create);
+    app.post('/', { preHandler: [authMiddleware, requireRole('ADMIN')] }, tagController.create);
     app.put('/:id', { preHandler: [authMiddleware, requireRole('ADMIN')] }, tagController.update);
     app.delete('/:id', { preHandler: [authMiddleware, requireRole('ADMIN')] }, tagController.delete);
 }
