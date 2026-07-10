@@ -271,6 +271,7 @@ export class GalleryService {
         title: data.title,
         description: data.description,
         coverPhotoId: data.coverPhotoId,
+        showcaseVideoUrl: data.showcaseVideoUrl === '' ? null : data.showcaseVideoUrl,
         published: data.published,
       },
       include: {

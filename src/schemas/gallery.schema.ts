@@ -16,6 +16,7 @@ export const updateGallerySchema = z.object({
   title: z.string().min(3).optional(),
   description: z.string().max(20000).optional(),
   coverPhotoId: z.string().uuid().optional(),
+  showcaseVideoUrl: z.string().optional(),
   published: z.boolean().optional(),
 });
 

@@ -75,9 +75,10 @@ model Gallery {
   eventId         String
   photographerId  String
   title           String    // Ex: "Dia 1 - Manhã", "Estúdio - Perez"
-  description     String?   @db.Text
-  coverPhotoId    String?   // foto de capa da galeria
-  published       Boolean   @default(false)
+  description        String?   @db.Text
+  coverPhotoId       String?
+  showcaseVideoUrl   String?
+  published          Boolean   @default(false)
   photoCount      Int       @default(0) // denormalizado para performance
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
