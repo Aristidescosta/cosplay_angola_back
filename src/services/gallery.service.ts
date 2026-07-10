@@ -140,6 +140,7 @@ export class GalleryService {
             slug: true,
             date: true,
             location: true,
+            coverImageUrl: true,
             published: true,
           },
         },
@@ -192,7 +193,25 @@ export class GalleryService {
       throw new Error('Galeria não encontrada');
     }
 
-    return gallery;
+    const relatedGalleries = await prisma.gallery.findMany({
+      where: {
+        published: true,
+        eventId: gallery.eventId,
+        id: { not: id },
+        event: { published: true },
+      },
+      select: {
+        id: true,
+        title: true,
+        description: true,
+        photoCount: true,
+        photographer: { select: { name: true } },
+      },
+      orderBy: { createdAt: 'desc' },
+      take: 3,
+    });
+
+    return { ...gallery, relatedGalleries };
   }
 
   /**

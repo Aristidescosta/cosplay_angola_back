@@ -130,7 +130,6 @@ export class EventService {
   async getBySlug(slug: string) {
     const event = await prisma.event.findUnique({
       where: { slug },
-
       include: {
         galleries: {
           where: { published: true },
@@ -150,7 +149,23 @@ export class EventService {
       throw new Error('Evento não encontrado');
     }
 
-    return event;
+    const relatedEvents = await prisma.event.findMany({
+      where: { published: true, id: { not: event.id } },
+      select: {
+        id: true,
+        title: true,
+        slug: true,
+        date: true,
+        location: true,
+        coverImageUrl: true,
+        _count: { select: { galleries: true } },
+        galleries: { select: { photoCount: true }, where: { published: true } },
+      },
+      orderBy: { date: 'desc' },
+      take: 3,
+    });
+
+    return { ...event, relatedEvents };
   }
 
   /**
