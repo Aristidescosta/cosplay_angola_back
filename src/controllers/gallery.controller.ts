@@ -55,6 +55,7 @@ export class GalleryController {
         photographerId: query.photographerId,
         published: query.published === 'true' ? true : query.published === 'false' ? false : undefined,
         search: query.search,
+        tag: query.tag,
         limit: query.limit ? parseInt(query.limit) : 20,
         offset: query.offset ? parseInt(query.offset) : 0,
       };

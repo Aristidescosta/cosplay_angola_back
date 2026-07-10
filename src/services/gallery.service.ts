@@ -53,6 +53,7 @@ export class GalleryService {
     photographerId?: string;
     published?: boolean;
     search?: string;
+    tag?: string;
     limit?: number;
     offset?: number;
   }) {
@@ -75,6 +76,12 @@ export class GalleryService {
         { title: { contains: filters.search, mode: 'insensitive' } },
         { description: { contains: filters.search, mode: 'insensitive' } },
       ];
+    }
+
+    if (filters?.tag) {
+      const tag = await prisma.tag.findUnique({ where: { slug: filters.tag } });
+      if (!tag) return { galleries: [], total: 0, limit: filters.limit ?? 20, offset: filters.offset ?? 0 };
+      where.photos = { some: { tags: { has: tag.name }, published: true } };
     }
 
     const limit = filters?.limit ?? 20;
