@@ -1,33 +1,43 @@
-# Ambiente virtual
-venv/
-env/
+# Dependencies
+node_modules/
 
-# Variáveis de ambiente
+# Environment variables (contém passwords!)
 .env
+.env.local
+.env.*.local
 
-# Banco de dados
-*.sqlite3
-db.sqlite3
+# Build output
+dist/
+build/
 
-# Python
-__pycache__/
-*.py[cod]
-*$py.class
-*.so
-.Python
+# Database
+*.db
+*.db-journal
+dev.db
 
-# Django
+# Logs
+logs/
 *.log
-media/
-staticfiles/
+npm-debug.log*
 
-# Testes
-.coverage
-htmlcov/
-.pytest_cache/
+# OS
+.DS_Store
+Thumbs.db
 
-# IDEs
+# IDE
 .vscode/
 .idea/
 *.swp
 *.swo
+
+# Uploads (ficheiros temporários)
+uploads/
+uploads-test/
+temp/
+
+# Prisma
+prisma/migrations/
+/src/generated/prisma
+
+# Tests
+coverage/
