@@ -9,6 +9,7 @@ import { galleryRoutes } from "./routes/gallery.routes";
 import { photoRoutes } from "./routes/photo.routes";
 import { dashboardRoutes } from "./routes/dashboard.routes";
 import { tagRoutes } from "./routes/tag.routes";
+import { searchRoutes } from "./routes/search.routes";
 
 const app = Fastify({
   logger: {
@@ -59,6 +60,7 @@ async function registerRoutes() {
   await app.register(photoRoutes, { prefix: '/api/photos' });
   await app.register(dashboardRoutes, { prefix: '/api/dashboard' });
   await app.register(tagRoutes, { prefix: '/api/tags' });
+  await app.register(searchRoutes, { prefix: '/api/search' });
 }
 
 // Iniciar servidor
