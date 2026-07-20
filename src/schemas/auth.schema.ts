@@ -1,13 +1,25 @@
 import { z } from 'zod';
 
 /**
- * Schema de validação para registro
+ * Schema de validação para registro público
+ * Nota: não aceita `role` — o registo público cria sempre um USER.
+ * Contas ADMIN/PHOTOGRAPHER são criadas via POST /api/auth/users (admin-only).
  */
 export const registerSchema = z.object({
   name: z.string().min(3, 'Nome deve ter no mínimo 3 caracteres'),
   email: z.string().email('Email inválido'),
   password: z.string().min(6, 'Password deve ter no mínimo 6 caracteres'),
-  role: z.enum(['USER', 'PHOTOGRAPHER', 'ADMIN']).optional().default('USER'),
+});
+
+/**
+ * Schema de validação para criação de utilizador por um admin
+ * (permite escolher a role, ao contrário do registo público)
+ */
+export const createUserSchema = z.object({
+  name: z.string().min(3, 'Nome deve ter no mínimo 3 caracteres'),
+  email: z.string().email('Email inválido'),
+  password: z.string().min(6, 'Password deve ter no mínimo 6 caracteres'),
+  role: z.enum(['USER', 'PHOTOGRAPHER', 'ADMIN']),
 });
 
 /**
@@ -20,4 +32,5 @@ export const loginSchema = z.object({
 
 // Tipos TypeScript gerados a partir dos schemas
 export type RegisterInput = z.infer<typeof registerSchema>;
+export type CreateUserInput = z.infer<typeof createUserSchema>;
 export type LoginInput = z.infer<typeof loginSchema>;

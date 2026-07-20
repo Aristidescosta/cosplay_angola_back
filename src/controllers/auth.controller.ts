@@ -1,6 +1,6 @@
 import { FastifyRequest, FastifyReply } from 'fastify';
 import { AuthService } from '../services/auth.service';
-import { registerSchema, loginSchema } from '../schemas/auth.schema';
+import { registerSchema, createUserSchema, loginSchema } from '../schemas/auth.schema';
 
 const authService = new AuthService();
 
@@ -35,6 +35,37 @@ export class AuthController {
       return reply.status(400).send({
         success: false,
         message: error.message || 'Erro ao registar utilizador',
+      });
+    }
+  }
+
+  /**
+   * POST /api/auth/users
+   * Criação de utilizador por um admin (permite escolher a role)
+   */
+  async createUser(request: FastifyRequest, reply: FastifyReply) {
+    try {
+      const data = createUserSchema.parse(request.body);
+
+      const result = await authService.createUser(data);
+
+      return reply.status(201).send({
+        success: true,
+        message: 'Utilizador criado com sucesso',
+        data: result,
+      });
+    } catch (error: any) {
+      if (error.name === 'ZodError') {
+        return reply.status(400).send({
+          success: false,
+          message: 'Dados inválidos',
+          errors: error.issues,
+        });
+      }
+
+      return reply.status(400).send({
+        success: false,
+        message: error.message || 'Erro ao criar utilizador',
       });
     }
   }

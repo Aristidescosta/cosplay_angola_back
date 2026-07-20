@@ -1,13 +1,18 @@
 import { prisma } from "../config/database";
 import { PasswordUtils } from "../utils/password";
 import { JwtUtils } from "../utils/jwt";
-import { RegisterInput, LoginInput } from "../schemas/auth.schema";
+import { RegisterInput, CreateUserInput, LoginInput } from "../schemas/auth.schema";
 
 export class AuthService {
   /**
-   * Registar novo utilizador
+   * Cria o utilizador na BD e devolve-o junto com um token JWT.
    */
-  async register(data: RegisterInput) {
+  private async createUserWithRole(data: {
+    name: string;
+    email: string;
+    password: string;
+    role: "USER" | "PHOTOGRAPHER" | "ADMIN";
+  }) {
     const existingUser = await prisma.user.findUnique({
       where: { email: data.email },
     });
@@ -22,7 +27,7 @@ export class AuthService {
         name: data.name,
         email: data.email,
         password: hashedPassword,
-        role: data.role || "USER",
+        role: data.role,
       },
       select: {
         id: true,
@@ -43,6 +48,21 @@ export class AuthService {
       user,
       token,
     };
+  }
+
+  /**
+   * Registo público — cria sempre um utilizador com role USER.
+   */
+  async register(data: RegisterInput) {
+    return this.createUserWithRole({ ...data, role: "USER" });
+  }
+
+  /**
+   * Criação de utilizador por um admin — permite escolher a role
+   * (USER, PHOTOGRAPHER ou ADMIN). Rota protegida, ver auth.routes.ts.
+   */
+  async createUser(data: CreateUserInput) {
+    return this.createUserWithRole(data);
   }
 
   /**

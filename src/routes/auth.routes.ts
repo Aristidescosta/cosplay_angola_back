@@ -1,15 +1,25 @@
 import { FastifyInstance } from 'fastify';
 import { AuthController } from '../controllers/auth.controller';
-import { authMiddleware } from '../middlewares/auth.middleware';
+import { authMiddleware, requireRole } from '../middlewares/auth.middleware';
 
 const authController = new AuthController();
 
 export async function authRoutes(app: FastifyInstance) {
   /**
    * POST /api/auth/register
-   * Registo de novo utilizador
+   * Registo público de novo utilizador (cria sempre role USER)
    */
   app.post('/register', authController.register);
+
+  /**
+   * POST /api/auth/users
+   * Criação de utilizador com role à escolha (USER/PHOTOGRAPHER/ADMIN)
+   * (Rota protegida - requer autenticação de ADMIN)
+   */
+  app.post('/users', {
+    preHandler: [authMiddleware, requireRole('ADMIN')],
+    handler: authController.createUser,
+  });
 
   /**
    * POST /api/auth/login
