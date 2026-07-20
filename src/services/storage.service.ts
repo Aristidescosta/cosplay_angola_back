@@ -11,8 +11,14 @@ export class StorageService {
     } catch {
       await s3Client.send(new CreateBucketCommand({ Bucket: this.bucket }));
     }
-    // Garantir política pública sempre (idempotente)
-    await this.setBucketPublicPolicy();
+    // Garantir política pública sempre (idempotente).
+    // Provedores como Cloudflare R2 não suportam PutBucketPolicy — nesse caso,
+    // o acesso público deve ser configurado no dashboard do provedor.
+    try {
+      await this.setBucketPublicPolicy();
+    } catch (err) {
+      console.warn('Não foi possível aplicar a política pública do bucket automaticamente. Confirma que o bucket está configurado como público no provedor de storage.', err);
+    }
   }
 
   private async setBucketPublicPolicy(): Promise<void> {

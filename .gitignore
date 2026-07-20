@@ -36,7 +36,6 @@ uploads-test/
 temp/
 
 # Prisma
-prisma/migrations/
 /src/generated/prisma
 
 # Tests
