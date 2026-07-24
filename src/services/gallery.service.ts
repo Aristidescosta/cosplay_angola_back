@@ -98,6 +98,7 @@ export class GalleryService {
             title: true,
             slug: true,
             date: true,
+            coverImageUrl: true,
           },
         },
         photographer: {
