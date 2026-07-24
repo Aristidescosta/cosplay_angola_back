@@ -3,6 +3,8 @@ node_modules/
 
 # Environment variables (contém passwords!)
 .env
+.env.dev
+.env.production
 .env.local
 .env.*.local
 

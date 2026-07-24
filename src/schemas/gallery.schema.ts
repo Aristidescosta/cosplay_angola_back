@@ -4,7 +4,7 @@ import { z } from 'zod';
  * Schema de validação para criar galeria
  */
 export const createGallerySchema = z.object({
-  eventId: z.string().uuid('ID de evento inválido'),
+  eventId: z.string().uuid('ID de evento inválido').optional(),
   title: z.string().min(3, 'Título deve ter no mínimo 3 caracteres'),
   description: z.string().max(20000).optional(),
 });

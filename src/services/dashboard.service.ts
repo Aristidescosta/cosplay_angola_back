@@ -136,8 +136,8 @@ export class DashboardService {
       caption: p.caption,
       uploadedAt: p.uploadedAt,
       gallery: p.gallery.title,
-      event: p.gallery.event.title,
-      eventSlug: p.gallery.event.slug,
+      event: p.gallery.event?.title ?? null,
+      eventSlug: p.gallery.event?.slug ?? null,
     }));
   }
 

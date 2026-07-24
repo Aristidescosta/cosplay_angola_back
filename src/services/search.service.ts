@@ -28,10 +28,15 @@ export class SearchService {
       prisma.gallery.findMany({
         where: {
           published: true,
-          event: { published: true },
-          OR: [
-            { title: { contains: term, mode: 'insensitive' } },
-            { description: { contains: term, mode: 'insensitive' } },
+          // Inclui galerias sem evento e galerias cujo evento está publicado
+          AND: [
+            { OR: [{ eventId: null }, { event: { published: true } }] },
+            {
+              OR: [
+                { title: { contains: term, mode: 'insensitive' } },
+                { description: { contains: term, mode: 'insensitive' } },
+              ],
+            },
           ],
         },
         select: {

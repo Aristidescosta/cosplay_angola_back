@@ -69,10 +69,10 @@ model Event {
   @@index([published])
 }
 
-// GALLERIES (álbuns de fotos dentro de um evento)
+// GALLERIES (álbuns de fotos, opcionalmente dentro de um evento)
 model Gallery {
   id              String    @id @default(uuid())
-  eventId         String
+  eventId         String?
   photographerId  String
   title           String    // Ex: "Dia 1 - Manhã", "Estúdio - Perez"
   description        String?   @db.Text
@@ -82,9 +82,9 @@ model Gallery {
   photoCount      Int       @default(0) // denormalizado para performance
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
-  
+
   // Relations
-  event           Event     @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  event           Event?    @relation(fields: [eventId], references: [id], onDelete: SetNull)
   photographer    User      @relation("PhotographerGalleries", fields: [photographerId], references: [id])
 
   photos          Photo[]

@@ -6,19 +6,21 @@ export class GalleryService {
    * Criar nova galeria
    */
   async create(data: CreateGalleryInput, photographerId: string) {
-    // Verificar se evento existe
-    const event = await prisma.event.findUnique({
-      where: { id: data.eventId },
-    });
+    // Verificar se evento existe (só quando a galeria é associada a um)
+    if (data.eventId) {
+      const event = await prisma.event.findUnique({
+        where: { id: data.eventId },
+      });
 
-    if (!event) {
-      throw new Error('Evento não encontrado');
+      if (!event) {
+        throw new Error('Evento não encontrado');
+      }
     }
 
     // Criar galeria
     const gallery = await prisma.gallery.create({
       data: {
-        eventId: data.eventId,
+        eventId: data.eventId ?? null,
         photographerId,
         title: data.title,
         description: data.description,
@@ -189,27 +191,32 @@ export class GalleryService {
     const isOwnerOrAdmin =
       userRole === 'ADMIN' || gallery.photographerId === userId;
 
-    if ((!gallery.published || !gallery.event.published) && !isOwnerOrAdmin) {
+    const eventBlocksAccess = gallery.event ? !gallery.event.published : false;
+
+    if ((!gallery.published || eventBlocksAccess) && !isOwnerOrAdmin) {
       throw new Error('Galeria não encontrada');
     }
 
-    const relatedGalleries = await prisma.gallery.findMany({
-      where: {
-        published: true,
-        eventId: gallery.eventId,
-        id: { not: id },
-        event: { published: true },
-      },
-      select: {
-        id: true,
-        title: true,
-        description: true,
-        photoCount: true,
-        photographer: { select: { name: true } },
-      },
-      orderBy: { createdAt: 'desc' },
-      take: 3,
-    });
+    // "Outras galerias" só faz sentido quando a galeria pertence a um evento
+    const relatedGalleries = gallery.eventId
+      ? await prisma.gallery.findMany({
+          where: {
+            published: true,
+            eventId: gallery.eventId,
+            id: { not: id },
+            event: { published: true },
+          },
+          select: {
+            id: true,
+            title: true,
+            description: true,
+            photoCount: true,
+            photographer: { select: { name: true } },
+          },
+          orderBy: { createdAt: 'desc' },
+          take: 3,
+        })
+      : [];
 
     return { ...gallery, relatedGalleries };
   }
