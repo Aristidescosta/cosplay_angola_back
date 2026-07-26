@@ -60,6 +60,7 @@ export class GalleryService {
     offset?: number;
   }) {
     const where: any = {};
+    const andConditions: any[] = [];
 
     if (filters?.eventId) {
       where.eventId = filters.eventId;
@@ -71,19 +72,33 @@ export class GalleryService {
 
     if (filters?.published !== undefined) {
       where.published = filters.published;
+
+      // Uma galeria publicada cujo evento deixou de estar publicado
+      // também deixa de ser considerada pública.
+      if (filters.published) {
+        andConditions.push({
+          OR: [{ eventId: null }, { event: { published: true } }],
+        });
+      }
     }
 
     if (filters?.search) {
-      where.OR = [
-        { title: { contains: filters.search, mode: 'insensitive' } },
-        { description: { contains: filters.search, mode: 'insensitive' } },
-      ];
+      andConditions.push({
+        OR: [
+          { title: { contains: filters.search, mode: 'insensitive' } },
+          { description: { contains: filters.search, mode: 'insensitive' } },
+        ],
+      });
     }
 
     if (filters?.tag) {
       const tag = await prisma.tag.findUnique({ where: { slug: filters.tag } });
       if (!tag) return { galleries: [], total: 0, limit: filters.limit ?? 20, offset: filters.offset ?? 0 };
       where.photos = { some: { tags: { has: tag.name }, published: true } };
+    }
+
+    if (andConditions.length > 0) {
+      where.AND = andConditions;
     }
 
     const limit = filters?.limit ?? 20;

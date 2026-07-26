@@ -114,6 +114,15 @@ export class PhotoService {
 
     if (filters?.published !== undefined) {
       where.published = filters.published;
+
+      // Uma foto publicada cuja galeria (ou o evento dessa galeria) deixou
+      // de estar publicada também deixa de ser considerada pública.
+      if (filters.published) {
+        where.gallery = {
+          published: true,
+          OR: [{ eventId: null }, { event: { published: true } }],
+        };
+      }
     }
 
     if (filters?.tags && filters.tags.length > 0) {
