@@ -124,26 +124,35 @@ export class ImageProcessor {
    * Processar imagem em memória — retorna buffers para cada tamanho (sem escrever em disco)
    */
   static async processToBuffers(buffer: Buffer): Promise<ProcessedBuffers> {
-    const metadata = await sharp(buffer).metadata();
+    // Trava imagens absurdamente grandes com um erro limpo (apanhado pelo
+    // controller, devolve 400) em vez de arriscar um crash nativo do
+    // libvips por falta de memória a meio do processamento.
+    const pipeline = sharp(buffer, { limitInputPixels: 60_000_000 });
+    const metadata = await pipeline.metadata();
 
     if (!metadata.width || !metadata.height) {
       throw new Error('Não foi possível obter dimensões da imagem');
     }
 
-    // Corre um de cada vez (em vez de Promise.all) — gerar as 4 versões
-    // em paralelo significa ter 4 imagens descodificadas em memória ao
-    // mesmo tempo, o que é fácil de estourar a memória do servidor com
-    // fotos grandes.
-    const original = await sharp(buffer).jpeg({ quality: 95 }).toBuffer();
-    const thumbnail = await sharp(buffer)
+    // Um `.clone()` do mesmo pipeline em vez de `sharp(buffer)` a cada
+    // versão — evita reanalisar o ficheiro de origem 4 vezes (padrão
+    // recomendado pelo Sharp para gerar múltiplos tamanhos do mesmo
+    // input). Corre sequencialmente (não Promise.all): gerar as 4
+    // versões em paralelo significa ter 4 imagens descodificadas em
+    // memória ao mesmo tempo, fácil de estourar a memória do servidor.
+    const original = await pipeline.clone().jpeg({ quality: 95 }).toBuffer();
+    const thumbnail = await pipeline
+      .clone()
       .resize(this.SIZES.thumbnail, null, { fit: 'inside', withoutEnlargement: true })
       .jpeg({ quality: 80 })
       .toBuffer();
-    const medium = await sharp(buffer)
+    const medium = await pipeline
+      .clone()
       .resize(this.SIZES.medium, null, { fit: 'inside', withoutEnlargement: true })
       .jpeg({ quality: 85 })
       .toBuffer();
-    const large = await sharp(buffer)
+    const large = await pipeline
+      .clone()
       .resize(this.SIZES.large, null, { fit: 'inside', withoutEnlargement: true })
       .jpeg({ quality: 90 })
       .toBuffer();
