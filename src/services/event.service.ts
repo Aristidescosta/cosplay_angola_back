@@ -29,6 +29,7 @@ export class EventService {
         date: new Date(data.date),
         location: data.location,
         coverImageUrl: data.coverImageUrl,
+        showcaseVideoUrl: data.showcaseVideoUrl,
         published: false, // sempre começa como não publicado
       },
     });
@@ -199,6 +200,8 @@ export class EventService {
         date: data.date ? new Date(data.date) : undefined,
         location: data.location,
         coverImageUrl: data.coverImageUrl,
+        showcaseVideoUrl:
+          data.showcaseVideoUrl === '' ? null : data.showcaseVideoUrl,
         published: data.published,
       },
     });

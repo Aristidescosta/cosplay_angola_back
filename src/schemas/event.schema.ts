@@ -9,6 +9,7 @@ export const createEventSchema = z.object({
   date: z.string().datetime('Data inválida (use formato ISO 8601)'),
   location: z.string().min(3, 'Localização deve ter no mínimo 3 caracteres'),
   coverImageUrl: z.string().url('URL de imagem inválida').optional(),
+  showcaseVideoUrl: z.string().optional(),
 });
 
 /**
@@ -21,6 +22,7 @@ export const updateEventSchema = z.object({
   date: z.string().datetime().optional(),
   location: z.string().min(3).optional(),
   coverImageUrl: z.string().url().optional(),
+  showcaseVideoUrl: z.string().optional(),
   published: z.boolean().optional(),
 });
 
