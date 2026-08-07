@@ -2,6 +2,13 @@ import sharp from 'sharp';
 import path from 'path';
 import fs from 'fs/promises';
 
+// Em hosts com pouca memória (ex: Render free tier, 512MB), a cache
+// interna do libvips e o processamento concorrente facilmente estouram
+// o limite ao processar fotos grandes. Isto mantém o pico de memória
+// baixo à custa de um pouco de velocidade.
+sharp.cache(false);
+sharp.concurrency(1);
+
 export interface ImageDimensions {
   width: number;
   height: number;
@@ -123,21 +130,23 @@ export class ImageProcessor {
       throw new Error('Não foi possível obter dimensões da imagem');
     }
 
-    const [original, thumbnail, medium, large] = await Promise.all([
-      sharp(buffer).jpeg({ quality: 95 }).toBuffer(),
-      sharp(buffer)
-        .resize(this.SIZES.thumbnail, null, { fit: 'inside', withoutEnlargement: true })
-        .jpeg({ quality: 80 })
-        .toBuffer(),
-      sharp(buffer)
-        .resize(this.SIZES.medium, null, { fit: 'inside', withoutEnlargement: true })
-        .jpeg({ quality: 85 })
-        .toBuffer(),
-      sharp(buffer)
-        .resize(this.SIZES.large, null, { fit: 'inside', withoutEnlargement: true })
-        .jpeg({ quality: 90 })
-        .toBuffer(),
-    ]);
+    // Corre um de cada vez (em vez de Promise.all) — gerar as 4 versões
+    // em paralelo significa ter 4 imagens descodificadas em memória ao
+    // mesmo tempo, o que é fácil de estourar a memória do servidor com
+    // fotos grandes.
+    const original = await sharp(buffer).jpeg({ quality: 95 }).toBuffer();
+    const thumbnail = await sharp(buffer)
+      .resize(this.SIZES.thumbnail, null, { fit: 'inside', withoutEnlargement: true })
+      .jpeg({ quality: 80 })
+      .toBuffer();
+    const medium = await sharp(buffer)
+      .resize(this.SIZES.medium, null, { fit: 'inside', withoutEnlargement: true })
+      .jpeg({ quality: 85 })
+      .toBuffer();
+    const large = await sharp(buffer)
+      .resize(this.SIZES.large, null, { fit: 'inside', withoutEnlargement: true })
+      .jpeg({ quality: 90 })
+      .toBuffer();
 
     return {
       buffers: { original, thumbnail, medium, large },
