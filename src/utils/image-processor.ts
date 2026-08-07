@@ -134,13 +134,19 @@ export class ImageProcessor {
       throw new Error('Não foi possível obter dimensões da imagem');
     }
 
+    // O "original" deixa de passar pelo Sharp — guardamos exatamente os
+    // bytes recebidos, sem descodificar/reencodar. Isso poupa uma
+    // operação inteira (a mais pesada, porque não tem resize a aliviar)
+    // e evita um problema pré-existente: o Sharp forçava sempre JPEG,
+    // mesmo quando o ficheiro original era PNG/WebP.
+    const original = buffer;
+
     // Um `.clone()` do mesmo pipeline em vez de `sharp(buffer)` a cada
-    // versão — evita reanalisar o ficheiro de origem 4 vezes (padrão
-    // recomendado pelo Sharp para gerar múltiplos tamanhos do mesmo
-    // input). Corre sequencialmente (não Promise.all): gerar as 4
-    // versões em paralelo significa ter 4 imagens descodificadas em
-    // memória ao mesmo tempo, fácil de estourar a memória do servidor.
-    const original = await pipeline.clone().jpeg({ quality: 95 }).toBuffer();
+    // versão — evita reanalisar o ficheiro de origem a cada tamanho
+    // (padrão recomendado pelo Sharp). Corre sequencialmente (não
+    // Promise.all): gerar várias versões em paralelo significa ter
+    // várias imagens descodificadas em memória ao mesmo tempo, fácil de
+    // estourar a memória do servidor.
     const thumbnail = await pipeline
       .clone()
       .resize(this.SIZES.thumbnail, null, { fit: 'inside', withoutEnlargement: true })

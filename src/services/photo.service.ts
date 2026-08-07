@@ -43,7 +43,7 @@ export class PhotoService {
     const processed = await ImageProcessor.processToBuffers(file.buffer);
 
     await Promise.all([
-      storageService.upload(keys.originalKey, processed.buffers.original, 'image/jpeg'),
+      storageService.upload(keys.originalKey, processed.buffers.original, file.mimetype),
       storageService.upload(keys.thumbnailKey, processed.buffers.thumbnail, 'image/jpeg'),
       storageService.upload(keys.mediumKey, processed.buffers.medium, 'image/jpeg'),
       storageService.upload(keys.largeKey, processed.buffers.large, 'image/jpeg'),
