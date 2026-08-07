@@ -12,7 +12,7 @@ export class JwtUtils {
    * Gera um JWT token
    */
   static generate(payload: JwtPayload): string {
-    return jwt.sign(payload, config.jwtSecret, { expiresIn: config.jwtExpiresIn as jwt.SignOptions['expiresIn'] });
+    return jwt.sign(payload, config.jwtSecret, { expiresIn: config.accessTokenExpiresIn as jwt.SignOptions['expiresIn'] });
   }
 
   /**

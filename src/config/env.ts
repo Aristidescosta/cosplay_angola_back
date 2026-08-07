@@ -10,7 +10,8 @@ export const config = {
 
   // JWT
   jwtSecret: process.env.JWT_SECRET!,
-  jwtExpiresIn: '7d',
+  accessTokenExpiresIn: '15m',
+  refreshTokenExpiresInDays: 30,
 
   // Upload
   maxFileSize: Number(process.env.MAX_FILE_SIZE) || 10 * 1024 * 1024, // 10MB

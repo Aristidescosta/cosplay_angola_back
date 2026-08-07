@@ -1,6 +1,6 @@
 import { FastifyRequest, FastifyReply } from 'fastify';
 import { AuthService } from '../services/auth.service';
-import { registerSchema, createUserSchema, loginSchema } from '../schemas/auth.schema';
+import { registerSchema, createUserSchema, loginSchema, refreshTokenSchema } from '../schemas/auth.schema';
 
 const authService = new AuthService();
 
@@ -100,6 +100,62 @@ export class AuthController {
       return reply.status(401).send({
         success: false,
         message: error.message || 'Credenciais inválidas',
+      });
+    }
+  }
+
+  /**
+   * POST /api/auth/refresh
+   * Troca um refresh token válido por um novo par de tokens
+   */
+  async refresh(request: FastifyRequest, reply: FastifyReply) {
+    try {
+      const data = refreshTokenSchema.parse(request.body);
+
+      const result = await authService.refresh(data);
+
+      return reply.status(200).send({
+        success: true,
+        data: result,
+      });
+    } catch (error: any) {
+      if (error.name === 'ZodError') {
+        return reply.status(400).send({
+          success: false,
+          message: 'Dados inválidos',
+          errors: error.issues,
+        });
+      }
+
+      return reply.status(401).send({
+        success: false,
+        message: error.message || 'Não foi possível renovar a sessão',
+      });
+    }
+  }
+
+  /**
+   * POST /api/auth/logout
+   * Revoga o refresh token (idempotente)
+   */
+  async logout(request: FastifyRequest, reply: FastifyReply) {
+    try {
+      const data = refreshTokenSchema.parse(request.body);
+      await authService.logout(data.refreshToken);
+
+      return reply.status(200).send({ success: true });
+    } catch (error: any) {
+      if (error.name === 'ZodError') {
+        return reply.status(400).send({
+          success: false,
+          message: 'Dados inválidos',
+          errors: error.issues,
+        });
+      }
+
+      return reply.status(400).send({
+        success: false,
+        message: error.message || 'Erro ao terminar sessão',
       });
     }
   }

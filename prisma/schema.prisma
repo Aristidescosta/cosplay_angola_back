@@ -20,7 +20,8 @@ model User {
   // Relations
   photographer  Photographer?
   galleries     Gallery[]     @relation("PhotographerGalleries")
-  
+  refreshTokens RefreshToken[]
+
   @@map("users")
 }
 
@@ -28,6 +29,22 @@ enum Role {
   USER
   PHOTOGRAPHER
   ADMIN
+}
+
+// REFRESH TOKENS (sessões — permitem revogar acesso sem esperar o JWT expirar)
+model RefreshToken {
+  id         String    @id @default(uuid())
+  userId     String
+  tokenHash  String    @unique
+  expiresAt  DateTime
+  revokedAt  DateTime?
+  createdAt  DateTime  @default(now())
+
+  // Relations
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("refresh_tokens")
+  @@index([userId])
 }
 
 // PHOTOGRAPHERS (perfil estendido para fotógrafos)

@@ -30,7 +30,15 @@ export const loginSchema = z.object({
   password: z.string().min(1, 'Password é obrigatória'),
 });
 
+/**
+ * Schema de validação para renovar/revogar sessão via refresh token
+ */
+export const refreshTokenSchema = z.object({
+  refreshToken: z.string().min(1, 'Refresh token é obrigatório'),
+});
+
 // Tipos TypeScript gerados a partir dos schemas
 export type RegisterInput = z.infer<typeof registerSchema>;
 export type CreateUserInput = z.infer<typeof createUserSchema>;
 export type LoginInput = z.infer<typeof loginSchema>;
+export type RefreshTokenInput = z.infer<typeof refreshTokenSchema>;

@@ -28,6 +28,18 @@ export async function authRoutes(app: FastifyInstance) {
   app.post('/login', authController.login);
 
   /**
+   * POST /api/auth/refresh
+   * Troca um refresh token válido por um novo par de tokens
+   */
+  app.post('/refresh', authController.refresh);
+
+  /**
+   * POST /api/auth/logout
+   * Revoga o refresh token da sessão atual
+   */
+  app.post('/logout', authController.logout);
+
+  /**
    * GET /api/auth/me
    * Obter dados do utilizador autenticado
    * (Rota protegida - requer autenticação)
