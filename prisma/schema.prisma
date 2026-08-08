@@ -103,9 +103,10 @@ model Gallery {
   // Relations
   event           Event?    @relation(fields: [eventId], references: [id], onDelete: SetNull)
   photographer    User      @relation("PhotographerGalleries", fields: [photographerId], references: [id])
+  coverPhoto      Photo?    @relation("GalleryCoverPhoto", fields: [coverPhotoId], references: [id], onDelete: SetNull)
 
   photos          Photo[]
-  
+
   @@map("galleries")
   @@index([eventId])
   @@index([photographerId])
@@ -134,7 +135,8 @@ model Photo {
   
   // Relations
   gallery         Gallery   @relation(fields: [galleryId], references: [id], onDelete: Cascade)
-  
+  coverOfGalleries Gallery[] @relation("GalleryCoverPhoto")
+
   @@map("photos")
   @@index([galleryId])
   @@index([published])

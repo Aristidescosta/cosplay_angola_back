@@ -108,6 +108,9 @@ export class EventService {
                 email: true,
               },
             },
+            coverPhoto: {
+              select: { id: true, thumbnailKey: true, mediumKey: true, s3Key: true },
+            },
             _count: {
               select: {
                 photos: true,
@@ -140,6 +143,9 @@ export class EventService {
                 id: true,
                 name: true,
               },
+            },
+            coverPhoto: {
+              select: { id: true, thumbnailKey: true, mediumKey: true, s3Key: true },
             },
           },
         },

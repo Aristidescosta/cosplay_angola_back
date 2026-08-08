@@ -123,6 +123,14 @@ export class GalleryService {
             email: true,
           },
         },
+        coverPhoto: {
+          select: {
+            id: true,
+            thumbnailKey: true,
+            mediumKey: true,
+            s3Key: true,
+          },
+        },
         _count: {
           select: {
             photos: true,
@@ -174,6 +182,14 @@ export class GalleryService {
                 portfolioUrl: true,
               },
             },
+          },
+        },
+        coverPhoto: {
+          select: {
+            id: true,
+            thumbnailKey: true,
+            mediumKey: true,
+            s3Key: true,
           },
         },
         photos: {
@@ -228,6 +244,9 @@ export class GalleryService {
             description: true,
             photoCount: true,
             photographer: { select: { name: true } },
+            coverPhoto: {
+              select: { id: true, thumbnailKey: true, mediumKey: true, s3Key: true },
+            },
           },
           orderBy: { createdAt: 'desc' },
           take: 3,
@@ -263,6 +282,14 @@ export class GalleryService {
             name: true,
           },
         },
+        coverPhoto: {
+          select: {
+            id: true,
+            thumbnailKey: true,
+            mediumKey: true,
+            s3Key: true,
+          },
+        },
         _count: {
           select: {
             photos: true,
@@ -288,6 +315,17 @@ export class GalleryService {
       throw new Error('Sem permissões para editar esta galeria');
     }
 
+    // A foto de capa tem de pertencer a esta galeria
+    if (data.coverPhotoId) {
+      const photo = await prisma.photo.findUnique({
+        where: { id: data.coverPhotoId },
+        select: { galleryId: true },
+      });
+      if (!photo || photo.galleryId !== id) {
+        throw new Error('Foto não encontrada nesta galeria');
+      }
+    }
+
     const updated = await prisma.gallery.update({
       where: { id },
       data: {
@@ -304,6 +342,7 @@ export class GalleryService {
             name: true,
           },
         },
+        coverPhoto: true,
       },
     });
 
