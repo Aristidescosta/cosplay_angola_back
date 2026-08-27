@@ -40,6 +40,26 @@ export async function authRoutes(app: FastifyInstance) {
   app.post('/logout', authController.logout);
 
   /**
+   * GET /api/auth/photographers
+   * Lista fotógrafos e admins (para atribuir galerias)
+   * (Rota protegida - requer autenticação de ADMIN)
+   */
+  app.get('/photographers', {
+    preHandler: [authMiddleware, requireRole('ADMIN')],
+    handler: authController.listPhotographers,
+  });
+
+  /**
+   * POST /api/auth/photographers/quick-create
+   * Cria rapidamente um fotógrafo sem login próprio (só o nome)
+   * (Rota protegida - requer autenticação de ADMIN)
+   */
+  app.post('/photographers/quick-create', {
+    preHandler: [authMiddleware, requireRole('ADMIN')],
+    handler: authController.quickCreatePhotographer,
+  });
+
+  /**
    * GET /api/auth/me
    * Obter dados do utilizador autenticado
    * (Rota protegida - requer autenticação)

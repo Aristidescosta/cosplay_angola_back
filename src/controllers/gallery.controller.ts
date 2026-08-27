@@ -18,8 +18,10 @@ export class GalleryController {
       const data = createGallerySchema.parse(request.body);
       // @ts-ignore
       const userId = request.user.userId;
+      // @ts-ignore
+      const userRole = request.user.role;
 
-      const gallery = await galleryService.create(data, userId);
+      const gallery = await galleryService.create(data, userId, userRole);
 
       return reply.status(201).send({
         success: true,

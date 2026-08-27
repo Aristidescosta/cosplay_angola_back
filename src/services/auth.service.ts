@@ -1,3 +1,4 @@
+import crypto from "crypto";
 import { prisma } from "../config/database";
 import { PasswordUtils } from "../utils/password";
 import { JwtUtils } from "../utils/jwt";
@@ -162,6 +163,53 @@ export class AuthService {
     await prisma.refreshToken.updateMany({
       where: { userId, revokedAt: null },
       data: { revokedAt: new Date() },
+    });
+  }
+
+  /**
+   * Lista utilizadores que podem ser donos de galerias (fotógrafos e
+   * admins) — usado no seletor de fotógrafo ao criar/editar uma galeria.
+   */
+  async listPhotographers() {
+    return prisma.user.findMany({
+      where: { role: { in: ["PHOTOGRAPHER", "ADMIN"] } },
+      select: { id: true, name: true, email: true, role: true },
+      orderBy: { name: "asc" },
+    });
+  }
+
+  /**
+   * Cria um "fotógrafo de sombra": um utilizador com role PHOTOGRAPHER
+   * sem que ele próprio se tenha registado — permite ao admin atribuir
+   * galerias a fotógrafos que ainda não têm (ou não precisam já de)
+   * login próprio. Email e password são gerados automaticamente e
+   * nunca são usados/mostrados; quando o login de fotógrafos for
+   * activado, um admin pode repor a password deste utilizador.
+   */
+  async quickCreatePhotographer(name: string) {
+    const withoutDiacritics = Array.from(name.toLowerCase().normalize("NFD"))
+      .filter((ch) => {
+        const code = ch.codePointAt(0) ?? 0;
+        return !(code >= 0x0300 && code <= 0x036f); // marcas de acentuação
+      })
+      .join("");
+    const slugBase =
+      withoutDiacritics
+        .replace(/[^a-z0-9]+/g, "-")
+        .replace(/(^-|-$)/g, "") || "fotografo";
+
+    const email = `${slugBase}-${crypto.randomBytes(4).toString("hex")}@fotografos.cosplayangola.ao`;
+    const password = crypto.randomBytes(16).toString("hex");
+    const hashedPassword = await PasswordUtils.hash(password);
+
+    return prisma.user.create({
+      data: {
+        name,
+        email,
+        password: hashedPassword,
+        role: "PHOTOGRAPHER",
+      },
+      select: { id: true, name: true, email: true, role: true },
     });
   }
 

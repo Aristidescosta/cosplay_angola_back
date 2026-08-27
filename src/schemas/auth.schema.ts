@@ -37,8 +37,17 @@ export const refreshTokenSchema = z.object({
   refreshToken: z.string().min(1, 'Refresh token é obrigatório'),
 });
 
+/**
+ * Schema de validação para criar rapidamente um fotógrafo "de sombra"
+ * (sem login próprio) — só o nome, tudo o resto é gerado.
+ */
+export const quickCreatePhotographerSchema = z.object({
+  name: z.string().min(3, 'Nome deve ter no mínimo 3 caracteres'),
+});
+
 // Tipos TypeScript gerados a partir dos schemas
 export type RegisterInput = z.infer<typeof registerSchema>;
 export type CreateUserInput = z.infer<typeof createUserSchema>;
 export type LoginInput = z.infer<typeof loginSchema>;
 export type RefreshTokenInput = z.infer<typeof refreshTokenSchema>;
+export type QuickCreatePhotographerInput = z.infer<typeof quickCreatePhotographerSchema>;

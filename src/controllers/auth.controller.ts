@@ -1,6 +1,6 @@
 import { FastifyRequest, FastifyReply } from 'fastify';
 import { AuthService } from '../services/auth.service';
-import { registerSchema, createUserSchema, loginSchema, refreshTokenSchema } from '../schemas/auth.schema';
+import { registerSchema, createUserSchema, loginSchema, refreshTokenSchema, quickCreatePhotographerSchema } from '../schemas/auth.schema';
 
 const authService = new AuthService();
 
@@ -156,6 +156,56 @@ export class AuthController {
       return reply.status(400).send({
         success: false,
         message: error.message || 'Erro ao terminar sessão',
+      });
+    }
+  }
+
+  /**
+   * GET /api/auth/photographers
+   * Lista fotógrafos e admins (para atribuir galerias)
+   */
+  async listPhotographers(request: FastifyRequest, reply: FastifyReply) {
+    try {
+      const photographers = await authService.listPhotographers();
+
+      return reply.status(200).send({
+        success: true,
+        data: photographers,
+      });
+    } catch (error: any) {
+      return reply.status(400).send({
+        success: false,
+        message: error.message || 'Erro ao listar fotógrafos',
+      });
+    }
+  }
+
+  /**
+   * POST /api/auth/photographers/quick-create
+   * Cria rapidamente um fotógrafo sem login próprio (só o nome)
+   */
+  async quickCreatePhotographer(request: FastifyRequest, reply: FastifyReply) {
+    try {
+      const data = quickCreatePhotographerSchema.parse(request.body);
+      const photographer = await authService.quickCreatePhotographer(data.name);
+
+      return reply.status(201).send({
+        success: true,
+        message: 'Fotógrafo criado com sucesso',
+        data: photographer,
+      });
+    } catch (error: any) {
+      if (error.name === 'ZodError') {
+        return reply.status(400).send({
+          success: false,
+          message: 'Dados inválidos',
+          errors: error.issues,
+        });
+      }
+
+      return reply.status(400).send({
+        success: false,
+        message: error.message || 'Erro ao criar fotógrafo',
       });
     }
   }

@@ -7,6 +7,8 @@ export const createGallerySchema = z.object({
   eventId: z.string().uuid('ID de evento inválido').optional(),
   title: z.string().min(3, 'Título deve ter no mínimo 3 caracteres'),
   description: z.string().max(20000).optional(),
+  // Só um ADMIN pode atribuir a um fotógrafo diferente de si mesmo
+  photographerId: z.string().uuid('ID de fotógrafo inválido').optional(),
 });
 
 /**
@@ -16,6 +18,7 @@ export const updateGallerySchema = z.object({
   title: z.string().min(3).optional(),
   description: z.string().max(20000).optional(),
   coverPhotoId: z.string().uuid().optional(),
+  photographerId: z.string().uuid('ID de fotógrafo inválido').optional(),
   published: z.boolean().optional(),
 });
 

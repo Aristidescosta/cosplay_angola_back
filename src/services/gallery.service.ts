@@ -5,7 +5,7 @@ export class GalleryService {
   /**
    * Criar nova galeria
    */
-  async create(data: CreateGalleryInput, photographerId: string) {
+  async create(data: CreateGalleryInput, userId: string, userRole: string) {
     // Verificar se evento existe (só quando a galeria é associada a um)
     if (data.eventId) {
       const event = await prisma.event.findUnique({
@@ -15,6 +15,19 @@ export class GalleryService {
       if (!event) {
         throw new Error('Evento não encontrado');
       }
+    }
+
+    // Por omissão a galeria fica atribuída a quem a está a criar; um
+    // ADMIN pode atribuí-la a outro fotógrafo.
+    let photographerId = userId;
+    if (data.photographerId && userRole === 'ADMIN') {
+      const target = await prisma.user.findUnique({
+        where: { id: data.photographerId },
+      });
+      if (!target || !['PHOTOGRAPHER', 'ADMIN'].includes(target.role)) {
+        throw new Error('Fotógrafo não encontrado');
+      }
+      photographerId = data.photographerId;
     }
 
     // Criar galeria
@@ -326,6 +339,18 @@ export class GalleryService {
       }
     }
 
+    // Só um ADMIN pode reatribuir a galeria a outro fotógrafo
+    let photographerId: string | undefined;
+    if (data.photographerId && userRole === 'ADMIN') {
+      const target = await prisma.user.findUnique({
+        where: { id: data.photographerId },
+      });
+      if (!target || !['PHOTOGRAPHER', 'ADMIN'].includes(target.role)) {
+        throw new Error('Fotógrafo não encontrado');
+      }
+      photographerId = data.photographerId;
+    }
+
     const updated = await prisma.gallery.update({
       where: { id },
       data: {
@@ -333,6 +358,7 @@ export class GalleryService {
         description: data.description,
         coverPhotoId: data.coverPhotoId,
         published: data.published,
+        ...(photographerId ? { photographerId } : {}),
       },
       include: {
         event: true,
