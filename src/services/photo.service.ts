@@ -27,13 +27,16 @@ export class PhotoService {
     file: FileInput,
     galleryId: string,
     userId: string,
+    userRole: string,
     caption?: string,
     tags?: string[]
   ) {
     const gallery = await prisma.gallery.findUnique({ where: { id: galleryId } });
 
     if (!gallery) throw new Error('Galeria não encontrada');
-    if (gallery.photographerId !== userId) throw new Error('Sem permissões para fazer upload nesta galeria');
+    if (gallery.photographerId !== userId && userRole !== 'ADMIN') {
+      throw new Error('Sem permissões para fazer upload nesta galeria');
+    }
 
     validateImageFile(file.mimetype);
     validateFileSize(file.buffer.length);
@@ -80,12 +83,12 @@ export class PhotoService {
   /**
    * Upload múltiplo — recebe buffers já lidos pelo controller
    */
-  async uploadMultiple(files: FileInput[], galleryId: string, userId: string) {
+  async uploadMultiple(files: FileInput[], galleryId: string, userId: string, userRole: string) {
     const results = [];
 
     for (const file of files) {
       try {
-        const photo = await this.upload(file, galleryId, userId);
+        const photo = await this.upload(file, galleryId, userId, userRole);
         results.push({ success: true, photo });
       } catch (error: any) {
         results.push({ success: false, filename: file.filename, error: error.message });
@@ -341,7 +344,14 @@ export class PhotoService {
   /**
    * Reordenar fotos numa galeria
    */
-  async reorder(galleryId: string, photoIds: string[]) {
+  async reorder(galleryId: string, photoIds: string[], userId: string, userRole: string) {
+    const gallery = await prisma.gallery.findUnique({ where: { id: galleryId } });
+
+    if (!gallery) throw new Error('Galeria não encontrada');
+    if (gallery.photographerId !== userId && userRole !== 'ADMIN') {
+      throw new Error('Sem permissões para reordenar fotos nesta galeria');
+    }
+
     const updates = photoIds.map((photoId, index) =>
       prisma.photo.update({
         where: { id: photoId },

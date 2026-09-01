@@ -17,6 +17,8 @@ export class PhotoController {
     try {
       // @ts-ignore
       const userId = request.user.userId;
+      // @ts-ignore
+      const userRole = request.user.role;
 
       // Obter dados do multipart
       const data = await request.file();
@@ -65,6 +67,7 @@ export class PhotoController {
         { buffer, filename: data.filename, mimetype: data.mimetype },
         galleryId,
         userId,
+        userRole,
         caption,
         tags
       );
@@ -75,7 +78,8 @@ export class PhotoController {
         data: photo,
       });
     } catch (error: any) {
-      return reply.status(400).send({
+      const status = error.message?.includes('permissões') ? 403 : 400;
+      return reply.status(status).send({
         success: false,
         message: error.message || 'Erro ao fazer upload da foto',
       });
@@ -90,6 +94,8 @@ export class PhotoController {
     try {
       // @ts-ignore
       const userId = request.user.userId;
+      // @ts-ignore
+      const userRole = request.user.role;
 
       // Obter múltiplos ficheiros
       const parts = request.parts();
@@ -119,7 +125,7 @@ export class PhotoController {
         });
       }
 
-      const results = await photoService.uploadMultiple(files, galleryId, userId);
+      const results = await photoService.uploadMultiple(files, galleryId, userId, userRole);
 
       const successCount = results.filter((r) => r.success).length;
       const failCount = results.filter((r) => !r.success).length;
@@ -325,15 +331,28 @@ export class PhotoController {
     try {
       const { galleryId } = request.params as { galleryId: string };
       const data = reorderPhotosSchema.parse(request.body);
+      // @ts-ignore
+      const userId = request.user.userId;
+      // @ts-ignore
+      const userRole = request.user.role;
 
-      const result = await photoService.reorder(galleryId, data.photoIds);
+      const result = await photoService.reorder(galleryId, data.photoIds, userId, userRole);
 
       return reply.status(200).send({
         success: true,
         message: result.message,
       });
     } catch (error: any) {
-      return reply.status(400).send({
+      if (error.name === 'ZodError') {
+        return reply.status(400).send({
+          success: false,
+          message: 'Dados inválidos',
+          errors: error.issues,
+        });
+      }
+
+      const status = error.message?.includes('permissões') ? 403 : 400;
+      return reply.status(status).send({
         success: false,
         message: error.message || 'Erro ao reordenar fotos',
       });
