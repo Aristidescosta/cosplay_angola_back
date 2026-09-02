@@ -23,6 +23,12 @@ export const config = {
   s3AccessKey: process.env.S3_ACCESS_KEY || 'minioadmin',
   s3SecretKey: process.env.S3_SECRET_KEY || 'minioadmin',
   s3PublicUrl: process.env.S3_PUBLIC_URL || 'http://localhost:9000/cosplay-angola',
+
+  // Contacto (Resend)
+  resendApiKey: process.env.RESEND_API_KEY,
+  contactEmailTo: process.env.CONTACT_EMAIL_TO || 'cosplayangola@gmail.com',
+  contactEmailFrom:
+    process.env.CONTACT_EMAIL_FROM || 'Cosplay Angola <onboarding@resend.dev>',
 };
 
 // Validar variáveis obrigatórias
